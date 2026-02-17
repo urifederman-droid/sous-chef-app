@@ -236,9 +236,9 @@ const handleSendMessage = async () => {
 If the user asks for a completely different recipe (not a modification, substitution, or adjustment of the current recipe), respond with EXACTLY this format and nothing else:
 [NEW_RECIPE: name of the recipe they want]
 
-If the user asks to add ingredients to their grocery list (or shopping list), extract the requested ingredients and respond with EXACTLY this format and nothing else:
-[GROCERY_EXPORT: ["ingredient 1", "ingredient 2", ...]]
-If they don't specify which ingredients, export all ingredients from the current recipe.`,
+If the user asks to add ingredients to their grocery list (or shopping list), extract the requested ingredients WITH their quantities and respond with EXACTLY this format and nothing else:
+[GROCERY_EXPORT: ["2 lbs chicken breast", "1 large onion", "3 cloves garlic", ...]]
+Always include the amount/quantity for each ingredient. If they don't specify which ingredients, export all ingredients from the current recipe.`,
         messages: conversationHistory
       });
       
