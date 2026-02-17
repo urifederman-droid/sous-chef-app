@@ -5,6 +5,22 @@ import { uploadPhoto } from './firebaseStorage';
 import './ChatCookingMode.css';
 import ReactMarkdown from 'react-markdown';
 
+function compressImage(base64DataUrl, maxWidth = 1024) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = base64DataUrl;
+  });
+}
+
 function ChatCookingMode() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
@@ -14,7 +30,6 @@ function ChatCookingMode() {
   const [showPinnedRecipe, setShowPinnedRecipe] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [pinnedRecipe, setPinnedRecipe] = useState(null);
-  const [sessionPhotos, setSessionPhotos] = useState([]);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -85,19 +100,12 @@ const handleSendMessage = async () => {
     
     // Read photo if attached
     if (file) {
-      photoData = await new Promise((resolve) => {
+      const rawData = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(file);
       });
-      // Upload to Firebase and save URL to session photos
-      try {
-        const photoUrl = await uploadPhoto(photoData);
-        setSessionPhotos([...sessionPhotos, photoUrl]);
-      } catch (uploadError) {
-        console.error('Photo upload failed:', uploadError);
-        setSessionPhotos([...sessionPhotos, photoData]);
-      }
+      photoData = await compressImage(rawData);
     }
     
     const userMessage = { 
@@ -150,6 +158,7 @@ const handleSendMessage = async () => {
       const stream = await anthropic.messages.stream({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 3000,
+        system: `You are a friendly cooking assistant. When the user asks to adjust servings, change the number of people, or modify quantities, you MUST output the complete updated recipe in full — with title, prep/cook/serves line, all ingredients with updated amounts, and all instructions. Do not just list the changes — always provide the entire recipe so it can replace the pinned version.`,
         messages: conversationHistory
       });
       
@@ -167,20 +176,38 @@ const handleSendMessage = async () => {
       setMessages([...newMessages, aiMessage]);
       
       if (!isPinned && newMessages.length >= 1) setIsPinned(true);
-      if (fullContent.includes('Ingredients')) setPinnedRecipe(fullContent);
-      
+      // Update pinned recipe only if response contains a full recipe structure
+      const hasIngredients = /ingredient/i.test(fullContent);
+      const hasInstructions = /instruction|step\s*\d|directions/i.test(fullContent);
+      if (hasIngredients && hasInstructions) {
+        setPinnedRecipe(fullContent);
+      }
+
     } catch (error) {
       console.error('Error:', error);
+      setMessages([...newMessages, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.', timestamp: new Date() }]);
     }
     setLoading(false);
   };
 
-  const handleFinishCooking = () => {
+  const handleFinishCooking = async () => {
     try {
+      // Collect photos from messages and upload to Firebase
+      const photosFromMessages = messages.filter(m => m.photo).map(m => m.photo);
+      const sessionPhotos = [];
+      for (let i = 0; i < photosFromMessages.length; i++) {
+        try {
+          const url = await uploadPhoto(photosFromMessages[i]);
+          sessionPhotos.push({ photo: url, stepNumber: i + 1 });
+        } catch (err) {
+          console.error('Photo upload failed:', err);
+        }
+      }
+
       const firstMessage = messages[0]?.content || '';
       const firstLine = firstMessage.split('\n')[0] || 'Recipe';
       const title = firstLine.replace(/[^a-zA-Z0-9\s-]/g, '').trim() || 'Recipe';
-      
+
       const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
       savedRecipes.unshift({
         title: title,
