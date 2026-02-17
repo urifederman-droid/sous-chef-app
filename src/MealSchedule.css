@@ -1,0 +1,312 @@
+.meal-schedule {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.meal-schedule .back-btn {
+  background: #f5f5f5;
+  color: #333;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-family: inherit;
+}
+
+.meal-schedule .back-btn:hover {
+  background: #e8e8e8;
+}
+
+.schedule-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.schedule-content h1 {
+  color: #333;
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 2.5rem;
+}
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.week-nav .nav-arrow {
+  background: #f5f5f5;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  font-family: inherit;
+}
+
+.week-nav .nav-arrow:hover {
+  background: #e8e8e8;
+}
+
+.week-range {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  min-width: 180px;
+  text-align: center;
+}
+
+.today-btn {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.today-btn:hover {
+  background: #555;
+}
+
+.days-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.day-row {
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.day-row.today {
+  border-color: #333;
+  border-width: 2px;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.day-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.day-date {
+  color: #999;
+  font-size: 0.85rem;
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+.add-meal-btn {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.add-meal-btn:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.meals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.meal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.meal-title {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.meal-source {
+  font-size: 0.75rem;
+  color: #bbb;
+  margin-left: 8px;
+}
+
+.delete-meal-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.delete-meal-btn:hover {
+  color: #e74c3c;
+  background: #fdf0ef;
+}
+
+.inline-add {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inline-add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.inline-add-row input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.inline-add-row input:focus {
+  border-color: #333;
+}
+
+.inline-add-row .add-btn {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.inline-add-row .add-btn:hover {
+  background: #555;
+}
+
+.from-library-btn {
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #e0e0e0;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  align-self: flex-start;
+}
+
+.from-library-btn:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.library-picker {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.library-picker-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  color: #333;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.library-picker-item:last-child {
+  border-bottom: none;
+}
+
+.library-picker-item:hover {
+  background: #f5f5f5;
+}
+
+.library-empty {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.cancel-add-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  align-self: flex-start;
+  padding: 4px 0;
+}
+
+.cancel-add-btn:hover {
+  color: #333;
+}
+
+@media (max-width: 600px) {
+  .schedule-content h1 {
+    font-size: 2rem;
+  }
+
+  .week-nav {
+    gap: 8px;
+  }
+
+  .week-range {
+    font-size: 0.95rem;
+    min-width: 140px;
+  }
+}

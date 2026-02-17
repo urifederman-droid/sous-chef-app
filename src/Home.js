@@ -34,6 +34,9 @@ function Home() {
               <button onClick={() => { navigate('/my-recipes'); setShowAccountMenu(false); }}>
                 My Library
               </button>
+              <button onClick={() => { navigate('/meal-schedule'); setShowAccountMenu(false); }}>
+                Meal Schedule
+              </button>
               <button onClick={() => { navigate('/grocery-list'); setShowAccountMenu(false); }}>
                 Grocery List
               </button>

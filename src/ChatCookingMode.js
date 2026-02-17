@@ -239,7 +239,11 @@ If the user asks for a completely different recipe (not a modification, substitu
 
 If the user asks to add ingredients to their grocery list (or shopping list), extract the requested ingredients WITH their quantities and respond with EXACTLY this format and nothing else:
 [GROCERY_EXPORT: ["2 lbs chicken breast", "1 large onion", "3 cloves garlic", ...]]
-Always include the amount/quantity for each ingredient. If they don't specify which ingredients, export all ingredients from the current recipe.` + getUserPreferencesPrompt(),
+Always include the amount/quantity for each ingredient. If they don't specify which ingredients, export all ingredients from the current recipe.
+
+If the user asks to save or schedule this recipe for a specific day, respond with EXACTLY this format and nothing else:
+[SCHEDULE_MEAL: {"title": "Recipe Title", "date": "YYYY-MM-DD"}]
+Use the current date context: today is ${new Date().toISOString().split('T')[0]}. The title should be the recipe name from the current conversation.` + getUserPreferencesPrompt(),
         messages: conversationHistory
       });
       
@@ -278,6 +282,29 @@ Always include the amount/quantity for each ingredient. If they don't specify wh
           return;
         } catch (e) {
           console.error('Error parsing grocery export:', e);
+        }
+      }
+
+      // Check if Claude scheduled a meal
+      const scheduleMatch = fullContent.trim().match(/^\[SCHEDULE_MEAL:\s*(\{.*\})\]$/s);
+      if (scheduleMatch) {
+        try {
+          const { title, date } = JSON.parse(scheduleMatch[1]);
+          const mealSchedule = JSON.parse(localStorage.getItem('mealSchedule') || '{}');
+          if (!mealSchedule[date]) mealSchedule[date] = [];
+          mealSchedule[date].push({
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+            title,
+            source: 'chat'
+          });
+          localStorage.setItem('mealSchedule', JSON.stringify(mealSchedule));
+          const dayLabel = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+          const confirmMsg = { role: 'assistant', content: `Saved ${title} to ${dayLabel}!`, timestamp: new Date() };
+          setMessages([...newMessages, confirmMsg]);
+          setLoading(false);
+          return;
+        } catch (e) {
+          console.error('Error parsing schedule meal:', e);
         }
       }
 
