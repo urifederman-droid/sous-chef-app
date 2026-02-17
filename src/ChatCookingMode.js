@@ -158,7 +158,7 @@ const handleSendMessage = async () => {
       const stream = await anthropic.messages.stream({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 3000,
-        system: `You are a friendly cooking assistant. When the user asks to adjust servings, change the number of people, or modify quantities, you MUST output the complete updated recipe in full — with title, prep/cook/serves line, all ingredients with updated amounts, and all instructions. Do not just list the changes — always provide the entire recipe so it can replace the pinned version.`,
+        system: `You are a friendly cooking assistant. Whenever the user requests ANY change to the recipe — such as adjusting servings, substituting ingredients, swapping cookware, changing cooking method, dietary modifications, or any other alteration — you MUST output the complete updated recipe in full, with title, prep/cook/serves line, all ingredients, and all instructions reflecting the changes. Do not just describe the changes — always provide the entire updated recipe so it can replace the pinned version.`,
         messages: conversationHistory
       });
       
