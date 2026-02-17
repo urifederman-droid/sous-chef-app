@@ -21,15 +21,35 @@ function compressImage(base64DataUrl, maxWidth = 1024) {
   });
 }
 
+function formatRecipeFromJSON(recipe) {
+  let text = `# ${recipe.title}\n`;
+  if (recipe.description) text += `${recipe.description}\n`;
+  text += `\nPrep Time: ${recipe.prepTime} | Cook Time: ${recipe.cookTime} | Serves: ${recipe.servings}\n`;
+  text += `\n## Ingredients\n`;
+  for (const ing of recipe.ingredients) {
+    text += `- ${ing.amount} ${ing.item}\n`;
+  }
+  text += `\n## Instructions\n`;
+  for (const step of recipe.steps) {
+    text += `${step.number}. ${step.instruction}\n`;
+    if (step.tip) text += `   *Tip: ${step.tip}*\n`;
+  }
+  text += `\nHow does that sound? Any changes to the number of people eating? Do you have all the equipment? All ingredients? I can help make any substitution.`;
+  return text;
+}
+
 function ChatCookingMode() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [preLoading, setPreLoading] = useState(false);
+  const [preLoading, setPreLoading] = useState(
+    () => !!localStorage.getItem('pendingRecipeRequest') || !!localStorage.getItem('currentRecipe')
+  );
   const [showPinnedRecipe, setShowPinnedRecipe] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [pinnedRecipe, setPinnedRecipe] = useState(null);
+  const [newRecipeRequest, setNewRecipeRequest] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -38,6 +58,22 @@ function ChatCookingMode() {
   }, [messages]);
 
   useEffect(() => {
+    const savedRecipe = localStorage.getItem('currentRecipe');
+    if (savedRecipe) {
+      localStorage.removeItem('currentRecipe');
+      try {
+        const recipe = JSON.parse(savedRecipe);
+        const formatted = formatRecipeFromJSON(recipe);
+        const aiMessage = { role: 'assistant', content: formatted, timestamp: new Date() };
+        setMessages([aiMessage]);
+        setPinnedRecipe(formatted);
+        setIsPinned(true);
+        enrichRecipeWithTips(formatted);
+      } catch (e) {
+        console.error('Error parsing saved recipe:', e);
+      }
+      return;
+    }
     const pendingRequest = localStorage.getItem('pendingRecipeRequest');
     if (pendingRequest) {
       localStorage.removeItem('pendingRecipeRequest');
@@ -85,6 +121,43 @@ function ChatCookingMode() {
       
     } catch (error) {
       console.error('Error:', error);
+    }
+    setLoading(false);
+  };
+
+  const enrichRecipeWithTips = async (recipeText) => {
+    setLoading(true);
+    try {
+      const anthropic = new Anthropic({
+        apiKey: process.env.REACT_APP_ANTHROPIC_API_KEY,
+        dangerouslyAllowBrowser: true
+      });
+
+      const stream = await anthropic.messages.stream({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        messages: [{
+          role: 'user',
+          content: `Rewrite the following recipe. Output ONLY the rewritten recipe — no preamble, no commentary, no "here's the recipe" intro.\n\nRules:\n- Keep the exact same structure: title, prep/cook/serves line, ingredients list, numbered instructions, and closing question.\n- For ONLY 2-3 steps where a beginner would genuinely struggle, add a tip on the line right after the instruction, formatted as: "   *Sous Chef Tip: ...*"\n- Only add tips for things a beginner truly wouldn't know (e.g. how many minutes "until softened" means, what "golden brown" looks like, a tricky temperature). Do NOT tip obvious steps like "preheat oven" or "mix in a bowl".\n- Do NOT add a separate tips section. Do NOT list tips at the end. Tips go inline, directly under their step.\n- Do NOT change ingredient amounts, step order, or recipe content.\n\nRecipe:\n\n${recipeText}`
+        }]
+      });
+
+      let fullContent = '';
+
+      for await (const chunk of stream) {
+        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+          fullContent += chunk.delta.text;
+          setMessages([{ role: 'assistant', content: fullContent, timestamp: new Date(), streaming: true }]);
+        }
+      }
+
+      const enrichedMessage = { role: 'assistant', content: fullContent, timestamp: new Date() };
+      setMessages([enrichedMessage]);
+      setPinnedRecipe(fullContent);
+
+    } catch (error) {
+      console.error('Error enriching recipe:', error);
+      // Silently fail — user still has the original recipe
     }
     setLoading(false);
   };
@@ -158,7 +231,14 @@ const handleSendMessage = async () => {
       const stream = await anthropic.messages.stream({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 3000,
-        system: `You are a friendly cooking assistant. Whenever the user requests ANY change to the recipe — such as adjusting servings, substituting ingredients, swapping cookware, changing cooking method, dietary modifications, or any other alteration — you MUST output the complete updated recipe in full, with title, prep/cook/serves line, all ingredients, and all instructions reflecting the changes. Do not just describe the changes — always provide the entire updated recipe so it can replace the pinned version.`,
+        system: `You are a friendly cooking assistant. Whenever the user requests ANY change to the recipe — such as adjusting servings, substituting ingredients, swapping cookware, changing cooking method, dietary modifications, or any other alteration — you MUST output the complete updated recipe in full, with title, prep/cook/serves line, all ingredients, and all instructions reflecting the changes. Do not just describe the changes — always provide the entire updated recipe so it can replace the pinned version.
+
+If the user asks for a completely different recipe (not a modification, substitution, or adjustment of the current recipe), respond with EXACTLY this format and nothing else:
+[NEW_RECIPE: name of the recipe they want]
+
+If the user asks to add ingredients to their grocery list (or shopping list), extract the requested ingredients and respond with EXACTLY this format and nothing else:
+[GROCERY_EXPORT: ["ingredient 1", "ingredient 2", ...]]
+If they don't specify which ingredients, export all ingredients from the current recipe.`,
         messages: conversationHistory
       });
       
@@ -172,9 +252,37 @@ const handleSendMessage = async () => {
         }
       }
       
+      // Check if Claude detected a new recipe request
+      const newRecipeMatch = fullContent.trim().match(/^\[NEW_RECIPE:\s*(.+)\]$/);
+      if (newRecipeMatch) {
+        // Remove the streaming message, keep only the user's messages
+        setMessages(newMessages);
+        setNewRecipeRequest(newRecipeMatch[1]);
+        setLoading(false);
+        return;
+      }
+
+      // Check if Claude exported grocery items
+      const groceryMatch = fullContent.trim().match(/^\[GROCERY_EXPORT:\s*(\[.*\])\]$/s);
+      if (groceryMatch) {
+        try {
+          const ingredients = JSON.parse(groceryMatch[1]);
+          const recipeTitle = (pinnedRecipe || '').split('\n')[0].replace(/[#*]/g, '').trim() || 'Recipe';
+          const existing = JSON.parse(localStorage.getItem('groceryList') || '[]');
+          const newItems = ingredients.map(name => ({ name, recipe: recipeTitle, checked: false }));
+          localStorage.setItem('groceryList', JSON.stringify([...existing, ...newItems]));
+          const confirmMsg = { role: 'assistant', content: `Added ${ingredients.length} ingredient${ingredients.length !== 1 ? 's' : ''} to your grocery list!`, timestamp: new Date() };
+          setMessages([...newMessages, confirmMsg]);
+          setLoading(false);
+          return;
+        } catch (e) {
+          console.error('Error parsing grocery export:', e);
+        }
+      }
+
       const aiMessage = { role: 'assistant', content: fullContent, timestamp: new Date() };
       setMessages([...newMessages, aiMessage]);
-      
+
       if (!isPinned && newMessages.length >= 1) setIsPinned(true);
       // Update pinned recipe only if response contains a full recipe structure
       const hasIngredients = /ingredient/i.test(fullContent);
@@ -188,6 +296,77 @@ const handleSendMessage = async () => {
       setMessages([...newMessages, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.', timestamp: new Date() }]);
     }
     setLoading(false);
+  };
+
+  const handleStartNewChat = () => {
+    localStorage.setItem('pendingRecipeRequest', newRecipeRequest);
+    setNewRecipeRequest(null);
+    window.location.href = '/cook';
+  };
+
+  const handleContinueInChat = () => {
+    const recipeName = newRecipeRequest;
+    setNewRecipeRequest(null);
+    // Re-send as a normal message bypassing new recipe detection
+    const userMessage = { role: 'user', content: `Give me a recipe for ${recipeName}`, timestamp: new Date() };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setPreLoading(true);
+    setLoading(true);
+
+    (async () => {
+      try {
+        const anthropic = new Anthropic({
+          apiKey: process.env.REACT_APP_ANTHROPIC_API_KEY,
+          dangerouslyAllowBrowser: true
+        });
+
+        const streamingMessage = { role: 'assistant', content: '', timestamp: new Date(), streaming: true };
+        setMessages([...newMessages, streamingMessage]);
+
+        const conversationHistory = newMessages.map(msg => {
+          if (msg.photo) {
+            return {
+              role: msg.role,
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: msg.photo.split(',')[1] } },
+                { type: 'text', text: msg.content }
+              ]
+            };
+          }
+          return { role: msg.role, content: msg.content };
+        });
+
+        const stream = await anthropic.messages.stream({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 3000,
+          system: `You are a friendly cooking assistant. The user wants a new recipe. Please provide it in full with title, prep/cook/serves line, all ingredients, and all instructions. At the end, ask if they'd like any changes.`,
+          messages: conversationHistory
+        });
+
+        let fullContent = '';
+        for await (const chunk of stream) {
+          if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+            setPreLoading(false);
+            fullContent += chunk.delta.text;
+            setMessages([...newMessages, { role: 'assistant', content: fullContent, timestamp: new Date(), streaming: true }]);
+          }
+        }
+
+        const aiMessage = { role: 'assistant', content: fullContent, timestamp: new Date() };
+        setMessages([...newMessages, aiMessage]);
+
+        const hasIngredients = /ingredient/i.test(fullContent);
+        const hasInstructions = /instruction|step\s*\d|directions/i.test(fullContent);
+        if (hasIngredients && hasInstructions) {
+          setPinnedRecipe(fullContent);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setMessages([...newMessages, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.', timestamp: new Date() }]);
+      }
+      setLoading(false);
+    })();
   };
 
   const handleFinishCooking = async () => {
@@ -249,6 +428,17 @@ const handleSendMessage = async () => {
             <div className="message-content"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
           </div>
         ))}
+        {newRecipeRequest && (
+          <div className="message assistant">
+            <div className="new-recipe-prompt">
+              <p>It looks like you want to make <strong>{newRecipeRequest}</strong>! Would you like to:</p>
+              <div className="new-recipe-buttons">
+                <button className="new-recipe-btn primary" onClick={handleStartNewChat}>Start New Recipe Chat</button>
+                <button className="new-recipe-btn secondary" onClick={handleContinueInChat}>Continue in This Chat</button>
+              </div>
+            </div>
+          </div>
+        )}
         {preLoading && messages.length === 0 && (
           <div className="message assistant">
             <div className="pre-loading-indicator">

@@ -1,24 +1,37 @@
-import logo from './logo.svg';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './Home';
+import GenerateRecipe from './GenerateRecipe';
+import ImportURL from './ImportURL';
+import PhotoImport from './PhotoImport';
+import IngredientCheck from './IngredientCheck';
+import ChatCookingMode from './ChatCookingMode';
+import CookingComplete from './CookingComplete';
+import CookFreestyle from './CookFreestyle';
+import MyRecipes from './MyRecipes';
+import AccountSettings from './AccountSettings';
+import GroceryList from './GroceryList';
 import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/generate" element={<GenerateRecipe />} />
+          <Route path="/import-url" element={<ImportURL />} />
+          <Route path="/photo-import" element={<PhotoImport />} />
+          <Route path="/ingredient-check" element={<IngredientCheck />} />
+          <Route path="/cook" element={<ChatCookingMode />} />
+          <Route path="/cook-freestyle" element={<CookFreestyle />} />
+          <Route path="/complete" element={<CookingComplete />} />
+          <Route path="/my-recipes" element={<MyRecipes />} />
+          <Route path="/account-settings" element={<AccountSettings />} />
+          <Route path="/grocery-list" element={<GroceryList />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
