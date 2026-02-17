@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
 import { uploadPhoto } from './firebaseStorage';
+import { getUserPreferencesPrompt } from './userPreferences';
 import './ChatCookingMode.css';
 import ReactMarkdown from 'react-markdown';
 
@@ -100,7 +101,7 @@ function ChatCookingMode() {
         max_tokens: 4000,
         messages: [{ 
         role: 'user', 
-        content: 'I need a recipe for ' + request + '. Please format it with:\n\n1. Title (with emoji)\n2. Right below the title, show: Prep Time | Cook Time | Serves X (on one line, separated by |)\n3. Then ingredients and instructions\n\nAt the END, always ask:\n\n"How does that sound? Any changes to the number of people eating? Do you have all the equipment? All ingredients? I can help make any substitution."\n\nMake it friendly and conversational.'
+        content: 'I need a recipe for ' + request + '. Please format it with:\n\n1. Title (with emoji)\n2. Right below the title, show: Prep Time | Cook Time | Serves X (on one line, separated by |)\n3. Then ingredients and instructions\n\nAt the END, always ask:\n\n"How does that sound? Any changes to the number of people eating? Do you have all the equipment? All ingredients? I can help make any substitution."\n\nMake it friendly and conversational.' + getUserPreferencesPrompt()
       }]
       });
       
@@ -238,7 +239,7 @@ If the user asks for a completely different recipe (not a modification, substitu
 
 If the user asks to add ingredients to their grocery list (or shopping list), extract the requested ingredients WITH their quantities and respond with EXACTLY this format and nothing else:
 [GROCERY_EXPORT: ["2 lbs chicken breast", "1 large onion", "3 cloves garlic", ...]]
-Always include the amount/quantity for each ingredient. If they don't specify which ingredients, export all ingredients from the current recipe.`,
+Always include the amount/quantity for each ingredient. If they don't specify which ingredients, export all ingredients from the current recipe.` + getUserPreferencesPrompt(),
         messages: conversationHistory
       });
       
@@ -340,7 +341,7 @@ Always include the amount/quantity for each ingredient. If they don't specify wh
         const stream = await anthropic.messages.stream({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 3000,
-          system: `You are a friendly cooking assistant. The user wants a new recipe. Please provide it in full with title, prep/cook/serves line, all ingredients, and all instructions. At the end, ask if they'd like any changes.`,
+          system: `You are a friendly cooking assistant. The user wants a new recipe. Please provide it in full with title, prep/cook/serves line, all ingredients, and all instructions. At the end, ask if they'd like any changes.` + getUserPreferencesPrompt(),
           messages: conversationHistory
         });
 
