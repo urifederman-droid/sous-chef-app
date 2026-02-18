@@ -14,7 +14,7 @@ export function getUserPreferencesPrompt() {
       parts.push(`- Ingredients I dislike: ${prefs.dislikes.trim()}`);
     }
     if (parts.length === 0) return '';
-    return `\n\nUser preferences (IMPORTANT — always respect these):\n${parts.join('\n')}`;
+    return `\n\nUser preferences (use as defaults, but if the user explicitly requests something that conflicts with these preferences, go with what they asked for and just briefly ask if they'd like a substitution instead):\n${parts.join('\n')}`;
   } catch {
     return '';
   }
