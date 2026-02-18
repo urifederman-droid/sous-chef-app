@@ -86,7 +86,7 @@ function MyRecipes() {
                       const photo = typeof photoData === 'string' ? photoData : photoData.photo;
                       return (
                         <div key={photoIndex} className="photo-item">
-                          <img src={photo} alt={`Cooking photo ${photoIndex + 1}`} />
+                          <img src={photo} alt={`Cooking step ${photoIndex + 1}`} />
                           {photoData.feedback && <div className="photo-feedback">{photoData.feedback}</div>}
                         </div>
                       );
