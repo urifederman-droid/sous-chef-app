@@ -84,11 +84,9 @@ function MyRecipes() {
                   <div className="photos-gallery">
                     {recipe.sessionPhotos.map((photoData, photoIndex) => {
                       const photo = typeof photoData === 'string' ? photoData : photoData.photo;
-                      const label = typeof photoData === 'string' ? `Photo ${photoIndex + 1}` : `Step ${photoData.stepNumber}`;
                       return (
                         <div key={photoIndex} className="photo-item">
-                          <div className="photo-header">{label}</div>
-                          <img src={photo} alt={label} />
+                          <img src={photo} alt={`Cooking photo ${photoIndex + 1}`} />
                           {photoData.feedback && <div className="photo-feedback">{photoData.feedback}</div>}
                         </div>
                       );
