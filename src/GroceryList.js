@@ -4,7 +4,7 @@ import './GroceryList.css';
 
 function normalizeIngredient(name) {
   return name
-    .replace(/^[\d\s\/½⅓⅔¼¾⅛]+/, '')
+    .replace(/^[\d\s/½⅓⅔¼¾⅛]+/, '')
     .replace(/^(lbs?|oz|cups?|tbsp|tsp|cloves?|large|small|medium|cans?|bunch|head|bags?|pkgs?|packages?|gallons?|quarts?|pints?|pieces?|slices?|sticks?)\b\s*/i, '')
     .trim()
     .toLowerCase();
