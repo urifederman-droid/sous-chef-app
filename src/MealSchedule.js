@@ -31,6 +31,7 @@ function MealSchedule() {
   const [schedule, setSchedule] = useState({});
   const [addingDay, setAddingDay] = useState(null);
   const [manualInput, setManualInput] = useState('');
+  const [selectedTag, setSelectedTag] = useState(null);
   const [showLibrary, setShowLibrary] = useState(false);
   const [savedRecipes, setSavedRecipes] = useState([]);
 
@@ -83,10 +84,12 @@ function MealSchedule() {
     updated[dateKey] = [...updated[dateKey], {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       title: manualInput.trim(),
-      source: 'manual'
+      source: 'manual',
+      tag: selectedTag || null
     }];
     saveSchedule(updated);
     setManualInput('');
+    setSelectedTag(null);
     setAddingDay(null);
   };
 
@@ -96,10 +99,13 @@ function MealSchedule() {
     updated[dateKey] = [...updated[dateKey], {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       title: recipe.title,
-      source: 'library'
+      source: 'library',
+      tag: selectedTag || null,
+      chatHistory: recipe.chatHistory || null
     }];
     saveSchedule(updated);
     setShowLibrary(false);
+    setSelectedTag(null);
     setAddingDay(null);
   };
 
@@ -112,13 +118,21 @@ function MealSchedule() {
   const openAdd = (dateKey) => {
     setAddingDay(dateKey);
     setManualInput('');
+    setSelectedTag(null);
     setShowLibrary(false);
   };
 
   const cancelAdd = () => {
     setAddingDay(null);
     setManualInput('');
+    setSelectedTag(null);
     setShowLibrary(false);
+  };
+
+  const handleMealClick = (meal) => {
+    if (!meal.chatHistory) return;
+    localStorage.setItem('pendingChatHistory', JSON.stringify(meal.chatHistory));
+    navigate('/cook');
   };
 
   return (
@@ -154,12 +168,16 @@ function MealSchedule() {
                 {meals.length > 0 && (
                   <div className="meals-list">
                     {meals.map(meal => (
-                      <div key={meal.id} className="meal-item">
+                      <div
+                        key={meal.id}
+                        className={`meal-item${meal.chatHistory ? ' clickable' : ''}`}
+                        onClick={() => handleMealClick(meal)}
+                      >
                         <span>
+                          {meal.tag && <span className={`meal-tag tag-${meal.tag}`}>{meal.tag}</span>}
                           <span className="meal-title">{meal.title}</span>
-                          <span className="meal-source">{meal.source}</span>
                         </span>
-                        <button className="delete-meal-btn" onClick={() => deleteMeal(dateKey, meal.id)}>x</button>
+                        <button className="delete-meal-btn" onClick={(e) => { e.stopPropagation(); deleteMeal(dateKey, meal.id); }}>x</button>
                       </div>
                     ))}
                   </div>
@@ -167,6 +185,17 @@ function MealSchedule() {
 
                 {addingDay === dateKey && (
                   <div className="inline-add">
+                    <div className="tag-toggles">
+                      {['breakfast', 'lunch', 'dinner'].map(tag => (
+                        <button
+                          key={tag}
+                          className={`tag-toggle${selectedTag === tag ? ' active' : ''} tag-${tag}`}
+                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
                     <div className="inline-add-row">
                       <input
                         type="text"

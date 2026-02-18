@@ -1,0 +1,187 @@
+.ingredient-check {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.back-btn {
+  background: #f5f5f5;
+  color: #333;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-family: inherit;
+}
+
+.back-btn:hover {
+  background: #e8e8e8;
+}
+
+.content {
+  max-width: 700px;
+  margin: 40px auto;
+}
+
+.content h1 {
+  color: #333;
+  font-size: 2rem;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 40px;
+}
+
+.recipe-header {
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+}
+
+.recipe-header h2 {
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 1.6rem;
+}
+
+.servings {
+  color: #666;
+  font-size: 1rem;
+}
+
+.ingredients-list {
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.ingredient-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.ingredient-item:last-child {
+  border-bottom: none;
+}
+
+.ingredient-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex: 1;
+  font-size: 1.1rem;
+}
+
+.checkbox-container input {
+  margin-right: 12px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.checkbox-container .checked {
+  color: #333;
+}
+
+.checkbox-container .unchecked {
+  color: #999;
+  text-decoration: line-through;
+}
+
+.substitute-btn {
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.substitute-btn:hover:not(:disabled) {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.substitute-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.substitution {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #856404;
+}
+
+.substitution strong {
+  color: #856404;
+}
+
+.warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.warning p {
+  color: #856404;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.start-cooking-btn {
+  width: 100%;
+  background: #333;
+  color: white;
+  border: none;
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.start-cooking-btn:hover {
+  background: #555;
+}
+
+@media (max-width: 600px) {
+  .ingredient-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .substitute-btn {
+    width: 100%;
+    margin-top: 10px;
+  }
+}

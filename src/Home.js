@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 
@@ -6,6 +6,12 @@ function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [pausedCount, setPausedCount] = useState(0);
+
+  useEffect(() => {
+    const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
+    setPausedCount(sessions.length);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -68,6 +74,15 @@ function Home() {
             )}
           </div>
         </form>
+
+        {pausedCount > 0 && (
+          <button
+            className="continue-cooking-btn"
+            onClick={() => navigate('/continue-cooking')}
+          >
+            Continue Cooking ({pausedCount})
+          </button>
+        )}
 
         <div className="secondary-actions">
           <button 

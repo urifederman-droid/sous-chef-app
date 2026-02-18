@@ -1,20 +1,28 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from './firebase';
-
 export async function uploadPhoto(base64DataUrl) {
-  // Convert base64 data URL to Blob
-  const response = await fetch(base64DataUrl);
-  const blob = await response.blob();
+  const bucket = process.env.REACT_APP_FIREBASE_STORAGE_BUCKET;
 
   // Generate unique filename
   const timestamp = Date.now();
   const randomStr = Math.random().toString(36).substring(2, 8);
   const filename = `cooking-photos/${timestamp}-${randomStr}.jpg`;
 
-  // Upload to Firebase Storage
-  const storageRef = ref(storage, filename);
-  await uploadBytes(storageRef, blob);
+  // Convert base64 to blob
+  const res = await fetch(base64DataUrl);
+  const blob = await res.blob();
 
-  // Return the download URL
-  return getDownloadURL(storageRef);
+  // Upload via Firebase Storage REST API
+  const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(filename)}`;
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': blob.type || 'image/jpeg' },
+    body: blob,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Upload failed (${response.status}): ${errorBody}`);
+  }
+
+  const data = await response.json();
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(data.name)}?alt=media&token=${data.downloadTokens}`;
 }

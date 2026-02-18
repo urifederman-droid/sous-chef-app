@@ -296,6 +296,82 @@
   color: #333;
 }
 
+/* Tag toggles in inline-add */
+.tag-toggles {
+  display: flex;
+  gap: 6px;
+}
+
+.tag-toggle {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: capitalize;
+  color: #666;
+}
+
+.tag-toggle:hover {
+  background: #e8e8e8;
+}
+
+.tag-toggle.active.tag-breakfast {
+  background: #fff3e0;
+  border-color: #ffb74d;
+  color: #e65100;
+}
+
+.tag-toggle.active.tag-lunch {
+  background: #e8f5e9;
+  border-color: #81c784;
+  color: #2e7d32;
+}
+
+.tag-toggle.active.tag-dinner {
+  background: #e3f2fd;
+  border-color: #64b5f6;
+  color: #1565c0;
+}
+
+/* Tag pills on meal items */
+.meal-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 6px;
+  text-transform: capitalize;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.meal-tag.tag-breakfast {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.meal-tag.tag-lunch {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.meal-tag.tag-dinner {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+/* Clickable meals with chat history */
+.meal-item.clickable {
+  cursor: pointer;
+}
+
+.meal-item.clickable:hover {
+  background: #f5f5f5;
+}
+
 @media (max-width: 600px) {
   .schedule-content h1 {
     font-size: 2rem;

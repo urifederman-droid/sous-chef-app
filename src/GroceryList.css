@@ -19,10 +19,146 @@
   line-height: 1.6;
 }
 
+.add-item-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.add-item-row input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.add-item-row input:focus {
+  border-color: #333;
+}
+
+.add-item-btn {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.add-item-btn:hover {
+  background: #555;
+}
+
+/* Add Store Row */
+.add-store-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.add-store-row input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.add-store-row input:focus {
+  border-color: #333;
+}
+
+.add-store-btn {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.add-store-btn:hover {
+  background: #e8e8e8;
+}
+
+/* Store Tags */
+.store-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.store-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f0f0;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+}
+
+.remove-store {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.remove-store:hover {
+  color: #d32f2f;
+}
+
+/* Grocery Actions & Group Toggle */
 .grocery-actions {
   display: flex;
+  align-items: center;
   gap: 12px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.group-toggle {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  color: #666;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toggle-btn.active {
+  background: #333;
+  color: white;
+}
+
+.toggle-btn:hover:not(.active) {
+  background: #e0e0e0;
 }
 
 .grocery-action-btn {
@@ -69,13 +205,21 @@
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid #eee;
-  cursor: pointer;
   font-size: 1rem;
   color: #333;
 }
 
 .grocery-item:last-child {
   border-bottom: none;
+}
+
+.grocery-item-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
 }
 
 .grocery-item.checked .item-name {
@@ -88,8 +232,41 @@
   height: 20px;
   cursor: pointer;
   accent-color: #333;
+  flex-shrink: 0;
 }
 
 .item-name {
   flex: 1;
+  min-width: 0;
+}
+
+/* Store Selector Pills */
+.store-selector {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.store-pill {
+  background: #f0f0f0;
+  border: 1px solid #e0e0e0;
+  color: #888;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.store-pill:hover {
+  background: #e4e4e4;
+  color: #555;
+}
+
+.store-pill.active {
+  background: #333;
+  color: white;
+  border-color: #333;
 }

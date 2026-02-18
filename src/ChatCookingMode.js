@@ -51,6 +51,7 @@ function ChatCookingMode() {
   const [isPinned, setIsPinned] = useState(false);
   const [pinnedRecipe, setPinnedRecipe] = useState(null);
   const [newRecipeRequest, setNewRecipeRequest] = useState(null);
+  const [sessionId] = useState(() => localStorage.getItem('resumeSessionId') || (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)));
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -58,7 +59,67 @@ function ChatCookingMode() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Auto-save session on every message change
   useEffect(() => {
+    if (messages.length > 0 && !messages[messages.length - 1]?.streaming) {
+      const firstMessage = messages[0]?.content || '';
+      const firstLine = firstMessage.split('\n')[0] || 'Recipe';
+      const title = firstLine.replace(/[^a-zA-Z0-9\s-]/g, '').trim() || 'Recipe';
+      const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
+      const existing = sessions.findIndex(s => s.id === sessionId);
+      const entry = {
+        id: sessionId,
+        title,
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+        pinnedRecipe,
+        updatedAt: new Date().toISOString()
+      };
+      if (existing >= 0) {
+        sessions[existing] = entry;
+      } else {
+        sessions.unshift(entry);
+      }
+      localStorage.setItem('pausedSessions', JSON.stringify(sessions));
+    }
+  }, [messages, pinnedRecipe, sessionId]);
+
+  useEffect(() => {
+    const pendingChat = localStorage.getItem('pendingChatHistory');
+    if (pendingChat) {
+      localStorage.removeItem('pendingChatHistory');
+      try {
+        const history = JSON.parse(pendingChat);
+        const restored = history.map(m => ({ role: m.role, content: m.content, timestamp: new Date() }));
+        setMessages(restored);
+        const firstAssistant = history.find(m => m.role === 'assistant');
+        if (firstAssistant) {
+          setPinnedRecipe(firstAssistant.content);
+          setIsPinned(true);
+        }
+      } catch (e) {
+        console.error('Error restoring chat history:', e);
+      }
+      return;
+    }
+    const resumeId = localStorage.getItem('resumeSessionId');
+    if (resumeId && !localStorage.getItem('currentRecipe') && !localStorage.getItem('pendingRecipeRequest')) {
+      localStorage.removeItem('resumeSessionId');
+      try {
+        const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
+        const session = sessions.find(s => s.id === resumeId);
+        if (session) {
+          const restored = session.messages.map(m => ({ role: m.role, content: m.content, timestamp: new Date() }));
+          setMessages(restored);
+          if (session.pinnedRecipe) {
+            setPinnedRecipe(session.pinnedRecipe);
+            setIsPinned(true);
+          }
+          return;
+        }
+      } catch (e) {
+        console.error('Error restoring paused session:', e);
+      }
+    }
     const savedRecipe = localStorage.getItem('currentRecipe');
     if (savedRecipe) {
       localStorage.removeItem('currentRecipe');
@@ -243,7 +304,7 @@ Always include the amount/quantity for each ingredient. If they don't specify wh
 
 If the user asks to save or schedule this recipe for a specific day, respond with EXACTLY this format and nothing else:
 [SCHEDULE_MEAL: {"title": "Recipe Title", "date": "YYYY-MM-DD"}]
-Use the current date context: today is ${new Date().toISOString().split('T')[0]}. The title should be the recipe name from the current conversation.` + getUserPreferencesPrompt(),
+Use the current date context: today is ${new Date().toLocaleDateString('en-CA')} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })}). The title should be the recipe name from the current conversation.` + getUserPreferencesPrompt(),
         messages: conversationHistory
       });
       
@@ -295,7 +356,8 @@ Use the current date context: today is ${new Date().toISOString().split('T')[0]}
           mealSchedule[date].push({
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
             title,
-            source: 'chat'
+            source: 'chat',
+            chatHistory: newMessages.map(m => ({ role: m.role, content: m.content }))
           });
           localStorage.setItem('mealSchedule', JSON.stringify(mealSchedule));
           const dayLabel = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -424,6 +486,8 @@ Use the current date context: today is ${new Date().toISOString().split('T')[0]}
       });
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
       
+      const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
+      localStorage.setItem('pausedSessions', JSON.stringify(sessions.filter(s => s.id !== sessionId)));
       console.log('Saved recipe:', title);
       navigate('/complete');
     } catch (error) {
@@ -435,8 +499,15 @@ Use the current date context: today is ${new Date().toISOString().split('T')[0]}
   return (
     <div className="chat-cooking-mode">
       <div className="chat-header">
-        <button className="back-btn" onClick={() => navigate('/')}>Exit</button>
-        <button className="finish-btn" onClick={handleFinishCooking}>Finish</button>
+        <button className="back-btn" onClick={() => {
+          const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
+          localStorage.setItem('pausedSessions', JSON.stringify(sessions.filter(s => s.id !== sessionId)));
+          navigate('/');
+        }}>Exit</button>
+        <div className="header-right">
+          <button className="pause-btn" onClick={() => navigate('/')}>Pause</button>
+          <button className="finish-btn" onClick={handleFinishCooking}>Finish</button>
+        </div>
       </div>
       {isPinned && pinnedRecipe && (
         <div className="pinned-message">
