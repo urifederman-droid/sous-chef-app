@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Settings } from 'lucide-react';
 import './GroceryList.css';
 
 function normalizeIngredient(name) {
@@ -32,8 +33,9 @@ function GroceryList() {
   const [newItem, setNewItem] = useState('');
   const [storePreferences, setStorePreferences] = useState({});
   const [userStores, setUserStores] = useState([]);
+  const [groupBy, setGroupBy] = useState('recipe');
+  const [showSettings, setShowSettings] = useState(false);
   const [newStore, setNewStore] = useState('');
-  const [groupBy, setGroupBy] = useState('recipe'); // 'recipe' or 'store'
 
   useEffect(() => {
     const prefs = loadStorePreferences();
@@ -41,7 +43,6 @@ function GroceryList() {
     setUserStores(loadUserStores());
 
     const saved = JSON.parse(localStorage.getItem('groceryList') || '[]');
-    // Apply store defaults to items without a store
     let changed = false;
     const withDefaults = saved.map(item => {
       if (!item.store) {
@@ -73,16 +74,13 @@ function GroceryList() {
   const setItemStore = (index, store) => {
     const updated = [...groceryList];
     const item = updated[index];
-    // Toggle off if same store is tapped again
-    const newStore = item.store === store ? '' : store;
-    updated[index] = { ...item, store: newStore };
+    updated[index] = { ...item, store };
     saveList(updated);
 
-    // Update store preferences
     const normalized = normalizeIngredient(item.name);
     const newPrefs = { ...storePreferences };
-    if (newStore) {
-      newPrefs[normalized] = newStore;
+    if (store) {
+      newPrefs[normalized] = store;
     } else {
       delete newPrefs[normalized];
     }
@@ -140,11 +138,62 @@ function GroceryList() {
 
   return (
     <div className="grocery-list-page">
-      <button className="back-btn" onClick={() => navigate('/')}>Back</button>
+      {/* Header */}
+      <header className="page-header">
+        <div className="header-left">
+          <button className="back-btn" onClick={() => navigate('/')}>
+            <ArrowLeft size={20} />
+          </button>
+          <h1>Grocery List</h1>
+        </div>
+        <button className="settings-btn" onClick={() => setShowSettings(true)}>
+          <Settings size={20} />
+        </button>
+      </header>
 
-      <div className="content">
-        <h1>Grocery List</h1>
+      {/* Store Settings Modal */}
+      {showSettings && (
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Manage Stores</h2>
+              <button className="modal-close" onClick={() => setShowSettings(false)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="store-add-row">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Add a store..."
+                  value={newStore}
+                  onChange={(e) => setNewStore(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addStore()}
+                />
+                <button className="modal-add-btn" onClick={addStore}>Add</button>
+              </div>
+              {userStores.length === 0 ? (
+                <p className="settings-empty">No stores added yet</p>
+              ) : (
+                <div className="store-list">
+                  {userStores.map(store => (
+                    <div key={store} className="store-list-item">
+                      <span>{store}</span>
+                      <button className="store-remove-btn" onClick={() => removeStore(store)}>
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* Content */}
+      <div className="page-content">
         <div className="add-item-row">
           <input
             type="text"
@@ -156,30 +205,12 @@ function GroceryList() {
           <button className="add-item-btn" onClick={addItem}>Add</button>
         </div>
 
-        <div className="add-store-row">
-          <input
-            type="text"
-            placeholder="Add a store..."
-            value={newStore}
-            onChange={(e) => setNewStore(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addStore()}
-          />
-          <button className="add-store-btn" onClick={addStore}>Add Store</button>
-        </div>
-
-        {userStores.length > 0 && (
-          <div className="store-tags">
-            {userStores.map(store => (
-              <span key={store} className="store-tag">
-                {store}
-                <button className="remove-store" onClick={() => removeStore(store)}>&times;</button>
-              </span>
-            ))}
-          </div>
-        )}
-
         {groceryList.length === 0 ? (
-          <p className="empty-state">Your grocery list is empty. Add items above or ask your Sous Chef to export ingredients from a recipe!</p>
+          <div className="empty-state">
+            <div className="empty-icon">🛒</div>
+            <h3>List is empty</h3>
+            <p>Add items above or ask your Sous Chef to export ingredients from a recipe!</p>
+          </div>
         ) : (
           <>
             <div className="grocery-actions">
@@ -211,15 +242,16 @@ function GroceryList() {
                       <span className="item-name">{item.name}</span>
                     </label>
                     {userStores.length > 0 && (
-                      <div className="store-selector">
+                      <select
+                        className="store-dropdown"
+                        value={item.store || ''}
+                        onChange={(e) => setItemStore(item.index, e.target.value)}
+                      >
+                        <option value="">Store</option>
                         {userStores.map(store => (
-                          <button
-                            key={store}
-                            className={'store-pill' + (item.store === store ? ' active' : '')}
-                            onClick={() => setItemStore(item.index, store)}
-                          >{store}</button>
+                          <option key={store} value={store}>{store}</option>
                         ))}
-                      </div>
+                      </select>
                     )}
                   </div>
                 ))}

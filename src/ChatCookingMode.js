@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
 import { uploadPhoto } from './firebaseStorage';
 import { getUserPreferencesPrompt } from './userPreferences';
+import { Menu, SquarePen, Pin, Plus, Send, Camera, X, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Search, ImageIcon } from 'lucide-react';
 import './ChatCookingMode.css';
 import ReactMarkdown from 'react-markdown';
 
@@ -52,8 +53,13 @@ function ChatCookingMode() {
   const [pinnedRecipe, setPinnedRecipe] = useState(null);
   const [newRecipeRequest, setNewRecipeRequest] = useState(null);
   const [sessionId] = useState(() => localStorage.getItem('resumeSessionId') || (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingPhotos, setPendingPhotos] = useState([]);
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+  const [pickerSelections, setPickerSelections] = useState([]);
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const libraryInputRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -224,35 +230,46 @@ function ChatCookingMode() {
     setLoading(false);
   };
 
-const handleSendMessage = async () => {
-    const file = fileInputRef.current?.files[0];
-    const hasPhoto = !!file;
-    const hasText = userInput.trim();
-    
-    if (!hasPhoto && !hasText) return;
-    
-    let photoData = null;
-    
-    // Read photo if attached
-    if (file) {
+const handleFilesSelected = async (files) => {
+    const newSelections = [...pickerSelections];
+    for (const file of files) {
       const rawData = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(file);
       });
-      photoData = await compressImage(rawData);
+      const compressed = await compressImage(rawData);
+      newSelections.push(compressed);
     }
-    
-    const userMessage = { 
-      role: 'user', 
-      content: userInput || 'What do you think of this?',
-      photo: photoData,
-      timestamp: new Date() 
+    setPickerSelections(newSelections);
+  };
+
+  const handleAddPhotos = () => {
+    setPendingPhotos(prev => [...prev, ...pickerSelections]);
+    setPickerSelections([]);
+    setShowPhotoPicker(false);
+  };
+
+  const handleRemovePendingPhoto = (index) => {
+    setPendingPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+const handleSendMessage = async () => {
+    const hasPhotos = pendingPhotos.length > 0;
+    const hasText = userInput.trim();
+
+    if (!hasPhotos && !hasText) return;
+
+    const userMessage = {
+      role: 'user',
+      content: userInput || (hasPhotos ? 'What do you think of this?' : ''),
+      photos: hasPhotos ? [...pendingPhotos] : undefined,
+      timestamp: new Date()
     };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setUserInput('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setPendingPhotos([]);
     
     setPreLoading(true);
     setLoading(true);
@@ -266,24 +283,22 @@ const handleSendMessage = async () => {
       const streamingMessage = { role: 'assistant', content: '', timestamp: new Date(), streaming: true };
       setMessages([...newMessages, streamingMessage]);
       
-      // Build message content with photo if present
+      // Build message content with photos if present
       const conversationHistory = newMessages.map(msg => {
-        if (msg.photo) {
+        const photos = msg.photos || (msg.photo ? [msg.photo] : []);
+        if (photos.length > 0) {
           return {
             role: msg.role,
             content: [
-              {
+              ...photos.map(photo => ({
                 type: 'image',
                 source: {
                   type: 'base64',
                   media_type: 'image/jpeg',
-                  data: msg.photo.split(',')[1]
+                  data: photo.split(',')[1]
                 }
-              },
-              {
-                type: 'text',
-                text: msg.content
-              }
+              })),
+              { type: 'text', text: msg.content }
             ]
           };
         }
@@ -304,7 +319,11 @@ Always include the amount/quantity for each ingredient. If they don't specify wh
 
 If the user asks to save or schedule this recipe for a specific day, respond with EXACTLY this format and nothing else:
 [SCHEDULE_MEAL: {"title": "Recipe Title", "date": "YYYY-MM-DD"}]
-Use the current date context: today is ${new Date().toLocaleDateString('en-CA')} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })}). The title should be the recipe name from the current conversation.` + getUserPreferencesPrompt(),
+Use the current date context: today is ${new Date().toLocaleDateString('en-CA')} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })}). The title should be the recipe name from the current conversation.
+
+If the user asks to save a recipe for later, add to their "want to cook" list, or bookmark a recipe idea, respond with EXACTLY this format and nothing else:
+[WANT_TO_COOK: "recipe title"]
+Use the recipe name from the current conversation as the title.` + getUserPreferencesPrompt(),
         messages: conversationHistory
       });
       
@@ -370,6 +389,27 @@ Use the current date context: today is ${new Date().toLocaleDateString('en-CA')}
         }
       }
 
+      // Check if Claude wants to save to Want to Cook
+      const wantToCookMatch = fullContent.trim().match(/^\[WANT_TO_COOK:\s*"(.+)"\]$/);
+      if (wantToCookMatch) {
+        try {
+          const title = wantToCookMatch[1];
+          const existing = JSON.parse(localStorage.getItem('wantToCook') || '[]');
+          existing.push({
+            id: Date.now().toString(),
+            title,
+            addedDate: new Date().toISOString()
+          });
+          localStorage.setItem('wantToCook', JSON.stringify(existing));
+          const confirmMsg = { role: 'assistant', content: `Saved "${title}" to your Want to Cook list!`, timestamp: new Date() };
+          setMessages([...newMessages, confirmMsg]);
+          setLoading(false);
+          return;
+        } catch (e) {
+          console.error('Error saving want to cook:', e);
+        }
+      }
+
       const aiMessage = { role: 'assistant', content: fullContent, timestamp: new Date() };
       setMessages([...newMessages, aiMessage]);
 
@@ -415,11 +455,15 @@ Use the current date context: today is ${new Date().toLocaleDateString('en-CA')}
         setMessages([...newMessages, streamingMessage]);
 
         const conversationHistory = newMessages.map(msg => {
-          if (msg.photo) {
+          const photos = msg.photos || (msg.photo ? [msg.photo] : []);
+          if (photos.length > 0) {
             return {
               role: msg.role,
               content: [
-                { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: msg.photo.split(',')[1] } },
+                ...photos.map(photo => ({
+                  type: 'image',
+                  source: { type: 'base64', media_type: 'image/jpeg', data: photo.split(',')[1] }
+                })),
                 { type: 'text', text: msg.content }
               ]
             };
@@ -432,7 +476,11 @@ Use the current date context: today is ${new Date().toLocaleDateString('en-CA')}
           max_tokens: 3000,
           system: `You are a friendly cooking assistant. The user wants a new recipe. Please provide it in full with title, prep/cook/serves line, all ingredients, and all instructions. At the end, ask if they'd like any changes.
 
-CRITICAL RULE: Always give the user EXACTLY what they asked for. If they say "beef tacos", give them beef tacos. If they say "pork ramen", give them pork ramen. NEVER substitute, replace, or change specific ingredients the user explicitly named. After providing the recipe exactly as requested, if it conflicts with their preferences, add a brief note offering to swap.` + getUserPreferencesPrompt(),
+CRITICAL RULE: Always give the user EXACTLY what they asked for. If they say "beef tacos", give them beef tacos. If they say "pork ramen", give them pork ramen. NEVER substitute, replace, or change specific ingredients the user explicitly named. After providing the recipe exactly as requested, if it conflicts with their preferences, add a brief note offering to swap.
+
+If the user asks to save a recipe for later, add to their "want to cook" list, or bookmark a recipe idea, respond with EXACTLY this format and nothing else:
+[WANT_TO_COOK: "recipe title"]
+Use the recipe name from the current conversation as the title.` + getUserPreferencesPrompt(),
           messages: conversationHistory
         });
 
@@ -464,7 +512,7 @@ CRITICAL RULE: Always give the user EXACTLY what they asked for. If they say "be
   const handleFinishCooking = async () => {
     try {
       // Collect photos from messages and upload to Firebase
-      const photosFromMessages = messages.filter(m => m.photo).map(m => m.photo);
+      const photosFromMessages = messages.flatMap(m => m.photos || (m.photo ? [m.photo] : []));
       const sessionPhotos = [];
       for (let i = 0; i < photosFromMessages.length; i++) {
         try {
@@ -498,50 +546,168 @@ CRITICAL RULE: Always give the user EXACTLY what they asked for. If they say "be
     }
   };
 
+  const recipeTitle = (() => {
+    const first = messages[0]?.content || '';
+    const line = first.split('\n')[0] || '';
+    return line.replace(/[#*]/g, '').trim() || 'Recipe';
+  })();
+
+  const recentSessions = (() => {
+    try {
+      const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
+      const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
+      return sessions.filter(s => s.id !== sessionId && new Date(s.updatedAt).getTime() > twoDaysAgo);
+    } catch { return []; }
+  })();
+
+  const handleResumeSession = (id) => {
+    localStorage.setItem('resumeSessionId', id);
+    setSidebarOpen(false);
+    window.location.href = '/cook';
+  };
+
+  const handleNewChat = () => {
+    setSidebarOpen(false);
+    window.location.href = '/cook';
+  };
+
   return (
     <div className="chat-cooking-mode">
-      <div className="chat-header">
-        <button className="back-btn" onClick={() => {
-          const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
-          localStorage.setItem('pausedSessions', JSON.stringify(sessions.filter(s => s.id !== sessionId)));
-          navigate('/');
-        }}>Exit</button>
-        <div className="header-right">
-          <button className="pause-btn" onClick={() => navigate('/')}>Pause</button>
-          <button className="finish-btn" onClick={handleFinishCooking}>Finish</button>
+      {/* Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}>
+          <div className="sidebar" onClick={(e) => e.stopPropagation()}>
+            <div className="sidebar-header">
+              <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>
+                <X size={20} />
+              </button>
+              <button className="sidebar-new-chat" onClick={handleNewChat}>
+                <SquarePen size={18} />
+              </button>
+            </div>
+
+            {/* Navigation */}
+            <nav className="sidebar-nav">
+              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/'); }}>
+                <Search size={18} />
+                <span>Home</span>
+              </button>
+              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/want-to-cook'); }}>
+                <ChefHat size={18} />
+                <span>Want to Cook</span>
+              </button>
+              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/continue-cooking'); }}>
+                <Clock size={18} />
+                <span>Continue Cooking</span>
+              </button>
+              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/my-recipes'); }}>
+                <BookOpen size={18} />
+                <span>My Recipes</span>
+              </button>
+              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/grocery-list'); }}>
+                <ShoppingCart size={18} />
+                <span>Grocery List</span>
+              </button>
+              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/meal-schedule'); }}>
+                <CalendarDays size={18} />
+                <span>Meal Schedule</span>
+              </button>
+            </nav>
+
+            {/* Recent Sessions */}
+            {recentSessions.length > 0 && (
+              <div className="sidebar-section">
+                <h3 className="sidebar-section-title">Recent</h3>
+                {recentSessions.map(session => (
+                  <button
+                    key={session.id}
+                    className="sidebar-session-item"
+                    onClick={() => handleResumeSession(session.id)}
+                  >
+                    {session.title}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Profile */}
+            <div className="sidebar-footer">
+              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/account-settings'); }}>
+                <User size={18} />
+                <span>Profile</span>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ChatGPT-Style Header */}
+      <header className="chat-header">
+        <button className="chat-header-btn" onClick={() => setSidebarOpen(true)}>
+          <Menu size={24} />
+        </button>
+        <div className="chat-header-title">{recipeTitle}</div>
+        <div className="header-right">
+          <button className="chat-header-btn" onClick={handleNewChat}>
+            <SquarePen size={20} />
+          </button>
+          <button className="chat-header-btn finish-btn" onClick={handleFinishCooking}>
+            Finish
+          </button>
+        </div>
+      </header>
+
+      {/* Pinned Recipe Bar */}
       {isPinned && pinnedRecipe && (
         <div className="pinned-message">
           <div className="pinned-preview" onClick={() => setShowPinnedRecipe(!showPinnedRecipe)}>
-            <span>📌 Recipe</span>
-            <span>{showPinnedRecipe ? '▼' : '▶'}</span>
+            <Pin size={16} className="pinned-icon" />
+            <span className="pinned-label">Full Recipe</span>
+            <span className="pinned-chevron">{showPinnedRecipe ? '▼' : '▶'}</span>
           </div>
           {showPinnedRecipe && <div className="pinned-content"><ReactMarkdown>{pinnedRecipe}</ReactMarkdown></div>}
         </div>
       )}
+
+      {/* Messages */}
       <div className="chat-messages">
         {messages.map((msg, i) => (
-          <div key={i} className={'message ' + msg.role}>
-            {msg.photo && (
-              <img src={msg.photo} alt="Cooking" className="message-photo" />
-            )}
-            <div className="message-content"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
+          <div key={i} className={'message-wrapper ' + msg.role}>
+            <div className={'message-bubble ' + msg.role}>
+              {/* Backward compat: single photo */}
+              {msg.photo && !msg.photos && (
+                <img src={msg.photo} alt="Cooking" className="message-photo" />
+              )}
+              {/* Multi-photo display */}
+              {msg.photos && msg.photos.length === 1 && (
+                <img src={msg.photos[0]} alt="Cooking" className="message-photo" />
+              )}
+              {msg.photos && msg.photos.length > 1 && (
+                <div className="message-photos">
+                  {msg.photos.map((photo, pi) => (
+                    <img key={pi} src={photo} alt={`Photo ${pi + 1}`} />
+                  ))}
+                </div>
+              )}
+              <div className="message-content"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
+            </div>
           </div>
         ))}
         {newRecipeRequest && (
-          <div className="message assistant">
-            <div className="new-recipe-prompt">
-              <p>It looks like you want to make <strong>{newRecipeRequest}</strong>! Would you like to:</p>
-              <div className="new-recipe-buttons">
-                <button className="new-recipe-btn primary" onClick={handleStartNewChat}>Start New Recipe Chat</button>
-                <button className="new-recipe-btn secondary" onClick={handleContinueInChat}>Continue in This Chat</button>
+          <div className="message-wrapper assistant">
+            <div className="message-bubble assistant">
+              <div className="new-recipe-prompt">
+                <p>It looks like you want to make <strong>{newRecipeRequest}</strong>! Would you like to:</p>
+                <div className="new-recipe-buttons">
+                  <button className="new-recipe-btn primary" onClick={handleStartNewChat}>Start New Recipe Chat</button>
+                  <button className="new-recipe-btn secondary" onClick={handleContinueInChat}>Continue in This Chat</button>
+                </div>
               </div>
             </div>
           </div>
         )}
         {preLoading && messages.length === 0 && (
-          <div className="message assistant">
+          <div className="message-wrapper assistant">
             <div className="pre-loading-indicator">
               <span className="chef-emoji pulsing">👨‍🍳</span>
             </div>
@@ -549,20 +715,110 @@ CRITICAL RULE: Always give the user EXACTLY what they asked for. If they say "be
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Pending Photos Strip */}
+      {pendingPhotos.length > 0 && (
+        <div className="pending-photos">
+          {pendingPhotos.map((photo, i) => (
+            <div key={i} className="pending-thumb-wrapper">
+              <img src={photo} alt={`Pending ${i + 1}`} className="pending-thumb" />
+              <button className="pending-thumb-remove" onClick={() => handleRemovePendingPhoto(i)}>
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ChatGPT-Style Input Bar */}
       <div className="chat-input-container">
+        {/* Hidden file inputs */}
         <input
           type="file"
           accept="image/*"
-          ref={fileInputRef}
+          capture="environment"
+          ref={cameraInputRef}
           style={{ display: 'none' }}
-          id="chat-photo-input"
+          onChange={(e) => {
+            if (e.target.files.length) handleFilesSelected(Array.from(e.target.files));
+            e.target.value = '';
+          }}
         />
-        <label htmlFor="chat-photo-input" className="photo-attach-btn">
-          📷
-        </label>
-        <input className="chat-input" placeholder="Ask a question..." value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} />
-        <button className="send-btn" onClick={handleSendMessage} disabled={loading}>Send</button>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          ref={libraryInputRef}
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            if (e.target.files.length) handleFilesSelected(Array.from(e.target.files));
+            e.target.value = '';
+          }}
+        />
+
+        <button className="attach-btn" onClick={() => setShowPhotoPicker(true)}>
+          <Plus size={20} />
+        </button>
+        <div className="chat-input-bar">
+          <input
+            className="chat-input"
+            placeholder="Ask anything"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          />
+          {(userInput.trim() || pendingPhotos.length > 0) ? (
+            <button className="send-btn" onClick={handleSendMessage} disabled={loading}>
+              <Send size={16} />
+            </button>
+          ) : (
+            <button className="camera-btn" onClick={() => { cameraInputRef.current?.click(); }}>
+              <Camera size={20} />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Photo Picker Bottom Sheet */}
+      {showPhotoPicker && (
+        <div className="photo-picker-overlay" onClick={() => { setShowPhotoPicker(false); setPickerSelections([]); }}>
+          <div className="photo-picker-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="photo-picker-header">
+              <span className="photo-picker-title">SousChef</span>
+              <button className="photo-picker-close" onClick={() => { setShowPhotoPicker(false); setPickerSelections([]); }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="picker-options">
+              <button className="picker-option-btn" onClick={() => cameraInputRef.current?.click()}>
+                <Camera size={24} />
+                <span>Camera</span>
+              </button>
+              <button className="picker-option-btn" onClick={() => libraryInputRef.current?.click()}>
+                <ImageIcon size={24} />
+                <span>Photo Library</span>
+              </button>
+            </div>
+
+            {pickerSelections.length > 0 && (
+              <>
+                <div className="picker-selections">
+                  {pickerSelections.map((photo, i) => (
+                    <div key={i} className="picker-thumb-wrapper">
+                      <img src={photo} alt={`Selection ${i + 1}`} className="picker-thumb" />
+                      <span className="picker-thumb-number">{i + 1}</span>
+                    </div>
+                  ))}
+                </div>
+                <button className="picker-add-btn" onClick={handleAddPhotos}>
+                  Add {pickerSelections.length} Photo{pickerSelections.length !== 1 ? 's' : ''}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

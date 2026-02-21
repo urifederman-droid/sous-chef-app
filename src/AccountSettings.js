@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import './AccountSettings.css';
 
 function AccountSettings() {
@@ -28,52 +29,57 @@ function AccountSettings() {
   };
 
   return (
-    <div className="account-settings">
-      <button className="back-btn" onClick={() => navigate('/')}>Back</button>
+    <div className="profile-page">
+      <header className="profile-header">
+        <button className="back-btn" onClick={() => navigate('/')}>
+          <ChevronLeft size={24} />
+        </button>
+        <h1>Profile</h1>
+        <div className="header-spacer" />
+      </header>
 
-      <div className="content">
-        <h1>Account Settings</h1>
+      <main className="profile-content">
+        <section className="profile-section">
+          <h2>User Preferences</h2>
 
-        <div className="settings-section">
-          <h3>Preferences</h3>
-          <div className="setting-item">
-            <label>Allergies & Dietary Restrictions</label>
+          <div className="pref-card">
+            <h3>Allergies & Dietary Restrictions</h3>
             <input
               type="text"
+              className="pref-input"
               placeholder="e.g. gluten-free, nut allergy, vegan"
               value={allergies}
               onChange={(e) => setAllergies(e.target.value)}
             />
           </div>
-          <div className="setting-item">
-            <label>Favorite Cuisines</label>
+
+          <div className="pref-card">
+            <h3>Favorite Cuisines</h3>
             <input
               type="text"
+              className="pref-input"
               placeholder="e.g. Mexican, Italian, Japanese"
               value={cuisines}
               onChange={(e) => setCuisines(e.target.value)}
             />
           </div>
-          <div className="setting-item">
-            <label>Ingredients I Dislike</label>
+
+          <div className="pref-card">
+            <h3>Ingredients I Don't Like</h3>
             <input
               type="text"
+              className="pref-input"
               placeholder="e.g. cilantro, olives, anchovies"
               value={dislikes}
               onChange={(e) => setDislikes(e.target.value)}
             />
           </div>
-          <div className="save-row">
-            <button className="save-btn" onClick={handleSave}>Save Preferences</button>
-            {saved && <span className="saved-feedback">Saved!</span>}
-          </div>
-        </div>
+        </section>
 
-        <div className="settings-section">
-          <h3>API Settings</h3>
-          <p className="info-text">Your Anthropic API key is configured and working.</p>
-        </div>
-      </div>
+        <button className="save-btn" onClick={handleSave}>
+          {saved ? 'Saved!' : 'Save Changes'}
+        </button>
+      </main>
     </div>
   );
 }

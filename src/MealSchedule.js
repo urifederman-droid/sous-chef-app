@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, BookOpen } from 'lucide-react';
 import './MealSchedule.css';
 
 function getWeekStart(date) {
@@ -22,7 +23,7 @@ function formatDateLabel(date) {
 }
 
 function getDayName(date) {
-  return date.toLocaleDateString('en-US', { weekday: 'long' });
+  return date.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
 function MealSchedule() {
@@ -77,11 +78,11 @@ function MealSchedule() {
     setWeekStart(getWeekStart(new Date()));
   };
 
-  const addManualMeal = (dateKey) => {
-    if (!manualInput.trim()) return;
+  const addManualMeal = () => {
+    if (!manualInput.trim() || !addingDay) return;
     const updated = { ...schedule };
-    if (!updated[dateKey]) updated[dateKey] = [];
-    updated[dateKey] = [...updated[dateKey], {
+    if (!updated[addingDay]) updated[addingDay] = [];
+    updated[addingDay] = [...updated[addingDay], {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       title: manualInput.trim(),
       source: 'manual',
@@ -91,12 +92,14 @@ function MealSchedule() {
     setManualInput('');
     setSelectedTag(null);
     setAddingDay(null);
+    setShowLibrary(false);
   };
 
-  const addLibraryMeal = (dateKey, recipe) => {
+  const addLibraryMeal = (recipe) => {
+    if (!addingDay) return;
     const updated = { ...schedule };
-    if (!updated[dateKey]) updated[dateKey] = [];
-    updated[dateKey] = [...updated[dateKey], {
+    if (!updated[addingDay]) updated[addingDay] = [];
+    updated[addingDay] = [...updated[addingDay], {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       title: recipe.title,
       source: 'library',
@@ -135,17 +138,96 @@ function MealSchedule() {
     navigate('/cook');
   };
 
+  const addingDayLabel = addingDay
+    ? (() => {
+        const d = weekDays.find(day => formatDateKey(day) === addingDay);
+        return d ? `${getDayName(d)}, ${formatDateLabel(d)}` : addingDay;
+      })()
+    : '';
+
   return (
-    <div className="meal-schedule">
-      <button className="back-btn" onClick={() => navigate('/')}>Back</button>
+    <div className="meal-schedule-page">
+      {/* Header */}
+      <header className="page-header">
+        <div className="header-left">
+          <button className="back-btn" onClick={() => navigate('/')}>
+            <ArrowLeft size={20} />
+          </button>
+          <h1>Meal Schedule</h1>
+        </div>
+      </header>
 
-      <div className="schedule-content">
-        <h1>Meal Schedule</h1>
+      {/* Add Meal Modal */}
+      {addingDay && (
+        <div className="modal-overlay" onClick={cancelAdd}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add Meal – {addingDayLabel}</h2>
+              <button className="modal-close" onClick={cancelAdd}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <div className="tag-toggles">
+                {['breakfast', 'lunch', 'dinner'].map(tag => (
+                  <button
+                    key={tag}
+                    className={`tag-toggle${selectedTag === tag ? ' active' : ''} tag-${tag}`}
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              <div className="store-add-row">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Meal name..."
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addManualMeal()}
+                  autoFocus
+                />
+                <button className="modal-add-btn" onClick={addManualMeal}>Add</button>
+              </div>
+              <button
+                className="library-toggle-btn"
+                onClick={() => setShowLibrary(!showLibrary)}
+              >
+                <BookOpen size={16} />
+                {showLibrary ? 'Hide Library' : 'From Library'}
+              </button>
+              {showLibrary && (
+                <div className="library-picker">
+                  {savedRecipes.length === 0 ? (
+                    <p className="settings-empty">No saved recipes yet</p>
+                  ) : (
+                    savedRecipes.map((recipe, i) => (
+                      <button
+                        key={i}
+                        className="library-picker-item"
+                        onClick={() => addLibraryMeal(recipe)}
+                      >
+                        {recipe.title}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* Content */}
+      <div className="page-content">
         <div className="week-nav">
-          <button className="nav-arrow" onClick={prevWeek}>&larr;</button>
+          <button className="nav-arrow" onClick={prevWeek}>
+            <ChevronLeft size={20} />
+          </button>
           <span className="week-range">{weekRangeLabel}</span>
-          <button className="nav-arrow" onClick={nextWeek}>&rarr;</button>
+          <button className="nav-arrow" onClick={nextWeek}>
+            <ChevronRight size={20} />
+          </button>
           <button className="today-btn" onClick={goToday}>Today</button>
         </div>
 
@@ -156,13 +238,15 @@ function MealSchedule() {
             const isToday = dateKey === todayKey;
 
             return (
-              <div key={dateKey} className={`day-row${isToday ? ' today' : ''}`}>
+              <div key={dateKey} className={`day-card${isToday ? ' today' : ''}`}>
                 <div className="day-header">
-                  <span className="day-label">
-                    {getDayName(day)}
+                  <div className="day-info">
+                    <span className="day-name">{getDayName(day)}</span>
                     <span className="day-date">{formatDateLabel(day)}</span>
-                  </span>
-                  <button className="add-meal-btn" onClick={() => openAdd(dateKey)}>+</button>
+                  </div>
+                  <button className="add-meal-btn" onClick={() => openAdd(dateKey)}>
+                    <Plus size={16} />
+                  </button>
                 </div>
 
                 {meals.length > 0 && (
@@ -173,62 +257,20 @@ function MealSchedule() {
                         className={`meal-item${meal.chatHistory ? ' clickable' : ''}`}
                         onClick={() => handleMealClick(meal)}
                       >
-                        <span>
+                        <div className="meal-info">
                           {meal.tag && <span className={`meal-tag tag-${meal.tag}`}>{meal.tag}</span>}
                           <span className="meal-title">{meal.title}</span>
-                        </span>
-                        <button className="delete-meal-btn" onClick={(e) => { e.stopPropagation(); deleteMeal(dateKey, meal.id); }}>x</button>
+                        </div>
+                        <button className="delete-meal-btn" onClick={(e) => { e.stopPropagation(); deleteMeal(dateKey, meal.id); }}>
+                          <X size={14} />
+                        </button>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {addingDay === dateKey && (
-                  <div className="inline-add">
-                    <div className="tag-toggles">
-                      {['breakfast', 'lunch', 'dinner'].map(tag => (
-                        <button
-                          key={tag}
-                          className={`tag-toggle${selectedTag === tag ? ' active' : ''} tag-${tag}`}
-                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="inline-add-row">
-                      <input
-                        type="text"
-                        placeholder="Meal name..."
-                        value={manualInput}
-                        onChange={(e) => setManualInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && addManualMeal(dateKey)}
-                        autoFocus
-                      />
-                      <button className="add-btn" onClick={() => addManualMeal(dateKey)}>Add</button>
-                    </div>
-                    <button className="from-library-btn" onClick={() => setShowLibrary(!showLibrary)}>
-                      {showLibrary ? 'Hide Library' : 'From Library'}
-                    </button>
-                    {showLibrary && (
-                      <div className="library-picker">
-                        {savedRecipes.length === 0 ? (
-                          <div className="library-empty">No saved recipes yet</div>
-                        ) : (
-                          savedRecipes.map((recipe, i) => (
-                            <button
-                              key={i}
-                              className="library-picker-item"
-                              onClick={() => addLibraryMeal(dateKey, recipe)}
-                            >
-                              {recipe.title}
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                    <button className="cancel-add-btn" onClick={cancelAdd}>Cancel</button>
-                  </div>
+                {meals.length === 0 && (
+                  <p className="no-meals">No meals planned</p>
                 )}
               </div>
             );

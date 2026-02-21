@@ -12,6 +12,7 @@ import MyRecipes from './MyRecipes';
 import AccountSettings from './AccountSettings';
 import GroceryList from './GroceryList';
 import MealSchedule from './MealSchedule';
+import WantToCook from './WantToCook';
 import ContinueCooking from './ContinueCooking';
 import './App.css';
 
@@ -32,6 +33,7 @@ function App() {
           <Route path="/account-settings" element={<AccountSettings />} />
           <Route path="/grocery-list" element={<GroceryList />} />
           <Route path="/meal-schedule" element={<MealSchedule />} />
+          <Route path="/want-to-cook" element={<WantToCook />} />
           <Route path="/continue-cooking" element={<ContinueCooking />} />
         </Routes>
       </div>

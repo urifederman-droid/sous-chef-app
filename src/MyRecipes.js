@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Star, X } from 'lucide-react';
 import './MyRecipes.css';
 
 function MyRecipes() {
   const navigate = useNavigate();
   const [recipes, setRecipes] = useState([]);
   const [expandedRecipe, setExpandedRecipe] = useState(null);
+  const [editingRecipe, setEditingRecipe] = useState(null);
 
   useEffect(() => {
     const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
@@ -13,15 +15,20 @@ function MyRecipes() {
   }, []);
 
   const cookAgain = (recipe) => {
-    // If recipe has chat history, extract the original recipe from first message
     if (recipe.chatHistory && recipe.chatHistory[0]) {
       localStorage.setItem('pendingRecipeRequest', recipe.title);
       navigate('/cook');
     } else {
-      // Old format - use ingredient check
       localStorage.setItem('currentRecipe', JSON.stringify(recipe));
       navigate('/ingredient-check');
     }
+  };
+
+  const deleteRecipe = (index) => {
+    const updated = recipes.filter((_, i) => i !== index);
+    setRecipes(updated);
+    localStorage.setItem('savedRecipes', JSON.stringify(updated));
+    setEditingRecipe(null);
   };
 
   const formatDate = (dateString) => {
@@ -34,70 +41,113 @@ function MyRecipes() {
   };
 
   return (
-    <div className="my-recipes">
-      <button className="back-btn" onClick={() => navigate('/')}>Back</button>
-      
-      <div className="content">
-        <h1>My Recipes</h1>
-        
+    <div className="my-recipes-page">
+      <header className="page-header">
+        <div className="header-left">
+          <button className="back-btn" onClick={() => navigate('/')}>
+            <ArrowLeft size={20} />
+          </button>
+          <h1>My Recipes</h1>
+        </div>
+      </header>
+
+      <main className="page-content">
         {recipes.length === 0 ? (
           <div className="empty-state">
-            <p>You haven't cooked anything yet!</p>
-            <button className="start-btn" onClick={() => navigate('/')}>
+            <div className="empty-icon">📖</div>
+            <h3>No recipes yet</h3>
+            <p>Finish cooking a recipe to see it here</p>
+            <button className="start-cooking-btn" onClick={() => navigate('/')}>
               Start Cooking
             </button>
           </div>
         ) : (
-          <div className="recipe-list">
+          <div className="card-list">
             {recipes.map((recipe, index) => (
               <div key={index} className="recipe-card">
-                <div className="recipe-main">
-                  <div className="recipe-info">
+                {/* Header */}
+                <div className="recipe-card-header">
+                  <div className="recipe-card-info">
                     <h3>{recipe.title}</h3>
-                    <p className="date">Cooked on {formatDate(recipe.cookedDate)}</p>
-                    {recipe.rating > 0 && (
-                      <div className="rating-display">
-                        {'★'.repeat(recipe.rating)}{'☆'.repeat(5 - recipe.rating)}
-                      </div>
-                    )}
-                    {recipe.notes && (
-                      <p className="notes">"{recipe.notes}"</p>
-                    )}
-                    {recipe.sessionPhotos && recipe.sessionPhotos.length > 0 && (
-                      <button 
-                        className="view-photos-btn"
-                        onClick={() => togglePhotos(index)}
-                      >
-                        {expandedRecipe === index ? 'Hide' : 'View'} {recipe.sessionPhotos.length} Photo{recipe.sessionPhotos.length > 1 ? 's' : ''}
-                      </button>
-                    )}
+                    <div className="recipe-meta">
+                      <span>{formatDate(recipe.cookedDate)}</span>
+                    </div>
                   </div>
-                  <button 
-                    className="cook-again-btn"
-                    onClick={() => cookAgain(recipe)}
+                  <button
+                    className="menu-btn"
+                    onClick={() => setEditingRecipe(editingRecipe === index ? null : index)}
                   >
-                    Cook Again
+                    {editingRecipe === index ? <X size={16} /> : '⋮'}
                   </button>
                 </div>
 
-                {expandedRecipe === index && recipe.sessionPhotos && (
-                  <div className="photos-gallery">
-                    {recipe.sessionPhotos.map((photoData, photoIndex) => {
-                      const photo = typeof photoData === 'string' ? photoData : photoData.photo;
-                      return (
-                        <div key={photoIndex} className="photo-item">
-                          <img src={photo} alt={`Cooking step ${photoIndex + 1}`} />
-                          {photoData.feedback && <div className="photo-feedback">{photoData.feedback}</div>}
-                        </div>
-                      );
-                    })}
+                {/* Delete option */}
+                {editingRecipe === index && (
+                  <button
+                    className="delete-recipe-btn"
+                    onClick={() => deleteRecipe(index)}
+                  >
+                    Delete Recipe
+                  </button>
+                )}
+
+                {/* Rating */}
+                {recipe.rating > 0 && (
+                  <div className="stars">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        size={18}
+                        className={star <= recipe.rating ? 'star-filled' : 'star-empty'}
+                      />
+                    ))}
                   </div>
                 )}
+
+                {/* Notes */}
+                {recipe.notes && (
+                  <div className="recipe-notes">
+                    <p className="notes-label">Tips for next time:</p>
+                    <p className="notes-text">{recipe.notes}</p>
+                  </div>
+                )}
+
+                {/* Photos */}
+                {recipe.sessionPhotos && recipe.sessionPhotos.length > 0 && (
+                  <>
+                    <button
+                      className="view-photos-btn"
+                      onClick={() => togglePhotos(index)}
+                    >
+                      {expandedRecipe === index ? 'Hide' : 'View'} {recipe.sessionPhotos.length} Photo{recipe.sessionPhotos.length > 1 ? 's' : ''}
+                    </button>
+                    {expandedRecipe === index && (
+                      <div className="photos-gallery">
+                        {recipe.sessionPhotos.map((photoData, photoIndex) => {
+                          const photo = typeof photoData === 'string' ? photoData : photoData.photo;
+                          return (
+                            <div key={photoIndex} className="photo-thumb">
+                              <img src={photo} alt={`Cooking step ${photoIndex + 1}`} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Cook Again */}
+                <button
+                  className="cook-again-btn"
+                  onClick={() => cookAgain(recipe)}
+                >
+                  Cook Again
+                </button>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
