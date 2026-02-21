@@ -305,7 +305,7 @@
   cursor: not-allowed;
 }
 
-.camera-btn {
+.mic-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,6 +317,18 @@
   border: none;
   background: transparent;
   padding: 0;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s;
+}
+
+.mic-btn.listening {
+  color: #e53e3e;
+  animation: pulse-mic 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-mic {
+  0%, 100% { background: rgba(229, 62, 62, 0.08); }
+  50% { background: rgba(229, 62, 62, 0.2); }
 }
 
 /* New Recipe Detection CTA */

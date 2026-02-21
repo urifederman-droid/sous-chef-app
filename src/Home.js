@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Mic, Camera, Menu, SquarePen, X } from 'lucide-react';
 import './Home.css';
@@ -7,6 +7,38 @@ function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  const toggleDictation = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    let finalTranscript = searchQuery;
+    recognition.onresult = (event) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      setSearchQuery(finalTranscript + (interim ? ' ' + interim : ''));
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -102,9 +134,6 @@ function Home() {
           <Menu size={24} />
         </button>
         <div className="header-actions">
-          <button className="header-action-btn" onClick={() => navigate('/cook')}>
-            <SquarePen size={20} />
-          </button>
           <button
             className="profile-btn"
             onClick={() => navigate('/account-settings')}
@@ -142,7 +171,7 @@ function Home() {
             <button type="submit" className="search-icon-btn">
               <Search size={20} />
             </button>
-            <button type="button" className="search-icon-btn">
+            <button type="button" className={`search-icon-btn ${isListening ? 'listening' : ''}`} onClick={toggleDictation}>
               <Mic size={20} />
             </button>
             <button

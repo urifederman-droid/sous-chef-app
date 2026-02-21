@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
 import { uploadPhoto } from './firebaseStorage';
 import { getUserPreferencesPrompt } from './userPreferences';
-import { Menu, SquarePen, Pin, Plus, Send, Camera, X, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Search, ImageIcon } from 'lucide-react';
+import { Menu, SquarePen, Pin, Plus, Send, Camera, Mic, X, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Search, ImageIcon } from 'lucide-react';
 import './ChatCookingMode.css';
 import ReactMarkdown from 'react-markdown';
 
@@ -57,10 +57,12 @@ function ChatCookingMode() {
   const [pendingPhotos, setPendingPhotos] = useState([]);
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const [pickerSelections, setPickerSelections] = useState([]);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -253,6 +255,36 @@ const handleFilesSelected = async (files) => {
 
   const handleRemovePendingPhoto = (index) => {
     setPendingPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+const toggleDictation = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    let finalTranscript = userInput;
+    recognition.onresult = (event) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      setUserInput(finalTranscript + (interim ? ' ' + interim : ''));
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
   };
 
 const handleSendMessage = async () => {
@@ -786,8 +818,8 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
               <Send size={16} />
             </button>
           ) : (
-            <button className="camera-btn" onClick={() => { cameraInputRef.current?.click(); }}>
-              <Camera size={20} />
+            <button className={`mic-btn ${isListening ? 'listening' : ''}`} onClick={toggleDictation}>
+              <Mic size={20} />
             </button>
           )}
         </div>
