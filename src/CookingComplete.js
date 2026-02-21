@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
 import './CookingComplete.css';
 
-const DEFAULT_TAGS = [
-  'Great for Hosting', 'Great for Kids', 'Weeknight Friendly', 'Date Night', 'Meal Prep Friendly',
-  'Healthy / Light', 'Comfort Food', 'Budget Friendly',
-  'Sweet', 'Salty', 'Sour', 'Spicy', 'Umami', 'Rich'
-];
+const TAG_CATEGORIES = {
+  'Occasion': ['Great for Hosting', 'Great for Kids', 'Weeknight Friendly', 'Date Night', 'Meal Prep Friendly'],
+  'Character': ['Healthy / Light', 'Comfort Food', 'Budget Friendly'],
+  'Flavor': ['Sweet', 'Salty', 'Sour', 'Spicy', 'Umami', 'Rich']
+};
+const ALL_DEFAULT_TAGS = Object.values(TAG_CATEGORIES).flat();
 
 function CookingComplete() {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ function CookingComplete() {
           max_tokens: 200,
           messages: [{
             role: 'user',
-            content: `Analyze this recipe and suggest 3-5 tags from this list: ${JSON.stringify(DEFAULT_TAGS)}. Respond with only a JSON array of strings, nothing else.\n\nRecipe:\n${recipeText.slice(0, 3000)}`
+            content: `Analyze this recipe and suggest 3-5 tags from this list: ${JSON.stringify(ALL_DEFAULT_TAGS)}. Respond with only a JSON array of strings, nothing else.\n\nRecipe:\n${recipeText.slice(0, 3000)}`
           }]
         });
 
@@ -149,24 +150,55 @@ function CookingComplete() {
             <div className="tags-loading">Suggesting tags...</div>
           ) : (
             <>
-              <div className="tags-container">
-                {tags.map((tag) => (
-                  <span key={tag} className="tag-chip">
-                    {tag}
-                    <button className="tag-remove-btn" onClick={() => removeTag(tag)}>×</button>
-                  </span>
-                ))}
-                <button className="add-tag-btn" onClick={() => setShowAddTag(!showAddTag)}>+ Add Tag</button>
-              </div>
-              {showAddTag && (
-                <div className="add-tag-menu">
-                  <div className="default-tags">
-                    {DEFAULT_TAGS.filter(t => !tags.includes(t)).map((tag) => (
-                      <button key={tag} className="default-tag-option" onClick={() => addTag(tag)}>
+              {Object.entries(TAG_CATEGORIES).map(([category, categoryTags]) => {
+                const selected = categoryTags.filter(t => tags.includes(t));
+                if (selected.length === 0) return null;
+                return (
+                  <div key={category} className="tag-category-group">
+                    <div className="tag-category-label">{category}</div>
+                    <div className="tags-container">
+                      {selected.map((tag) => (
+                        <span key={tag} className="tag-chip">
+                          {tag}
+                          <button className="tag-remove-btn" onClick={() => removeTag(tag)}>×</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {tags.filter(t => !ALL_DEFAULT_TAGS.includes(t)).length > 0 && (
+                <div className="tag-category-group">
+                  <div className="tag-category-label">Custom</div>
+                  <div className="tags-container">
+                    {tags.filter(t => !ALL_DEFAULT_TAGS.includes(t)).map((tag) => (
+                      <span key={tag} className="tag-chip">
                         {tag}
-                      </button>
+                        <button className="tag-remove-btn" onClick={() => removeTag(tag)}>×</button>
+                      </span>
                     ))}
                   </div>
+                </div>
+              )}
+              <button className="add-tag-btn" onClick={() => setShowAddTag(!showAddTag)}>+ Add Tag</button>
+              {showAddTag && (
+                <div className="add-tag-menu">
+                  {Object.entries(TAG_CATEGORIES).map(([category, categoryTags]) => {
+                    const available = categoryTags.filter(t => !tags.includes(t));
+                    if (available.length === 0) return null;
+                    return (
+                      <div key={category} className="add-tag-category">
+                        <div className="add-tag-category-label">{category}</div>
+                        <div className="default-tags">
+                          {available.map((tag) => (
+                            <button key={tag} className="default-tag-option" onClick={() => addTag(tag)}>
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                   <div className="custom-tag-input">
                     <input
                       type="text"

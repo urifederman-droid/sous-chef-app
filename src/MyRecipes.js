@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, X } from 'lucide-react';
+import { ArrowLeft, Star, X, ChevronDown } from 'lucide-react';
 import './MyRecipes.css';
 
 function MyRecipes() {
@@ -9,7 +9,15 @@ function MyRecipes() {
   const [expandedRecipe, setExpandedRecipe] = useState(null);
   const [expandedRating, setExpandedRating] = useState(null);
   const [editingRecipe, setEditingRecipe] = useState(null);
-  const [activeFilter, setActiveFilter] = useState(null);
+  const [activeTagFilter, setActiveTagFilter] = useState(null);
+  const [ratingFilter, setRatingFilter] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
+
+  const TAG_CATEGORIES = {
+    'Occasion': ['Great for Hosting', 'Great for Kids', 'Weeknight Friendly', 'Date Night', 'Meal Prep Friendly'],
+    'Character': ['Healthy / Light', 'Comfort Food', 'Budget Friendly'],
+    'Flavor': ['Sweet', 'Salty', 'Sour', 'Spicy', 'Umami', 'Rich']
+  };
 
   useEffect(() => {
     const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
@@ -17,9 +25,37 @@ function MyRecipes() {
   }, []);
 
   const allTags = [...new Set(recipes.flatMap(r => r.tags || []))];
-  const filteredRecipes = activeFilter
-    ? recipes.filter(r => (r.tags || []).includes(activeFilter))
-    : recipes;
+  const hasAnyFilters = allTags.length > 0 || recipes.some(r => r.rating > 0);
+
+  const filteredRecipes = recipes.filter(r => {
+    if (activeTagFilter && !(r.tags || []).includes(activeTagFilter)) return false;
+    if (ratingFilter && (r.rating || 0) < ratingFilter) return false;
+    return true;
+  });
+
+  const hasActiveFilter = activeTagFilter || ratingFilter;
+
+  const clearFilters = () => {
+    setActiveTagFilter(null);
+    setRatingFilter(null);
+    setOpenDropdown(null);
+  };
+
+  const filterBarRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (filterBarRef.current && !filterBarRef.current.contains(e.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const toggleDropdown = (name) => {
+    setOpenDropdown(openDropdown === name ? null : name);
+  };
 
   const cookAgain = (recipe) => {
     if (recipe.chatHistory && recipe.chatHistory[0]) {
@@ -58,24 +94,83 @@ function MyRecipes() {
         </div>
       </header>
 
-      {allTags.length > 0 && (
-        <div className="tag-filter-bar">
-          <div className="tag-filters">
-            <button
-              className={`tag-filter ${activeFilter === null ? 'active' : ''}`}
-              onClick={() => setActiveFilter(null)}
-            >
-              All
-            </button>
-            {allTags.map(tag => (
-              <button
-                key={tag}
-                className={`tag-filter ${activeFilter === tag ? 'active' : ''}`}
-                onClick={() => setActiveFilter(tag)}
-              >
-                {tag}
+      {hasAnyFilters && (
+        <div className="filter-bar" ref={filterBarRef}>
+          <div className="filter-dropdowns">
+            {Object.entries(TAG_CATEGORIES).map(([category, categoryTags]) => {
+              const available = categoryTags.filter(t => allTags.includes(t));
+              if (available.length === 0) return null;
+              const isActive = activeTagFilter && categoryTags.includes(activeTagFilter);
+              return (
+                <div key={category} className="filter-dropdown-wrapper">
+                  <button
+                    className={`filter-dropdown-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => toggleDropdown(category)}
+                  >
+                    {isActive ? activeTagFilter : category}
+                    <ChevronDown size={14} />
+                  </button>
+                  {openDropdown === category && (
+                    <div className="filter-dropdown-menu">
+                      {isActive && (
+                        <button
+                          className="filter-dropdown-option"
+                          onClick={() => { setActiveTagFilter(null); setOpenDropdown(null); }}
+                        >
+                          All {category}
+                        </button>
+                      )}
+                      {available.filter(t => t !== activeTagFilter).map(tag => (
+                        <button
+                          key={tag}
+                          className="filter-dropdown-option"
+                          onClick={() => { setActiveTagFilter(tag); setOpenDropdown(null); }}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {recipes.some(r => r.rating > 0) && (
+              <div className="filter-dropdown-wrapper">
+                <button
+                  className={`filter-dropdown-btn ${ratingFilter ? 'active' : ''}`}
+                  onClick={() => toggleDropdown('rating')}
+                >
+                  {ratingFilter ? `${ratingFilter}+ Stars` : 'Rating'}
+                  <ChevronDown size={14} />
+                </button>
+                {openDropdown === 'rating' && (
+                  <div className="filter-dropdown-menu">
+                    {ratingFilter && (
+                      <button
+                        className="filter-dropdown-option"
+                        onClick={() => { setRatingFilter(null); setOpenDropdown(null); }}
+                      >
+                        Any Rating
+                      </button>
+                    )}
+                    {[5, 4, 3, 2, 1].map(stars => (
+                      <button
+                        key={stars}
+                        className={`filter-dropdown-option ${ratingFilter === stars ? 'selected' : ''}`}
+                        onClick={() => { setRatingFilter(stars); setOpenDropdown(null); }}
+                      >
+                        {'★'.repeat(stars)}{'☆'.repeat(5 - stars)} {stars}+
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {hasActiveFilter && (
+              <button className="clear-filters-btn" onClick={clearFilters}>
+                Clear
               </button>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -92,11 +187,12 @@ function MyRecipes() {
           </div>
         ) : (
           <div className="card-list">
-            {filteredRecipes.length === 0 && activeFilter ? (
+            {filteredRecipes.length === 0 && hasActiveFilter ? (
               <div className="empty-state">
-                <h3>No recipes with "{activeFilter}"</h3>
-                <button className="start-cooking-btn" onClick={() => setActiveFilter(null)}>
-                  Clear Filter
+                <h3>No matching recipes</h3>
+                <p>{activeTagFilter ? `Tag: ${activeTagFilter}` : ''}{activeTagFilter && ratingFilter ? ' · ' : ''}{ratingFilter ? `${ratingFilter}+ stars` : ''}</p>
+                <button className="start-cooking-btn" onClick={clearFilters}>
+                  Clear Filters
                 </button>
               </div>
             ) : filteredRecipes.map((recipe) => {

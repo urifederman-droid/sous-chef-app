@@ -215,7 +215,7 @@
   min-width: 80px;
 }
 
-.tag-filter-bar {
+.filter-bar {
   position: sticky;
   top: 0;
   z-index: 10;
@@ -224,21 +224,29 @@
   padding: 10px 16px;
 }
 
-.tag-filters {
+.filter-dropdowns {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  align-items: center;
 }
 
-.tag-filters::-webkit-scrollbar {
+.filter-dropdowns::-webkit-scrollbar {
   display: none;
 }
 
-.tag-filter {
+.filter-dropdown-wrapper {
+  position: relative;
   flex-shrink: 0;
-  padding: 6px 14px;
+}
+
+.filter-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
   border-radius: 20px;
   border: 1px solid var(--border);
   background: var(--muted);
@@ -249,14 +257,67 @@
   white-space: nowrap;
 }
 
-.tag-filter:hover {
+.filter-dropdown-btn:hover {
   background: var(--accent);
 }
 
-.tag-filter.active {
+.filter-dropdown-btn.active {
   background: var(--primary);
   color: var(--primary-foreground);
   border-color: var(--primary);
+}
+
+.filter-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 180px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+  z-index: 20;
+}
+
+.filter-dropdown-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: var(--foreground);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 8px;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.filter-dropdown-option:hover {
+  background: var(--accent);
+}
+
+.filter-dropdown-option.selected {
+  font-weight: 600;
+}
+
+.clear-filters-btn {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: none;
+  background: none;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+}
+
+.clear-filters-btn:hover {
+  color: var(--foreground);
 }
 
 .recipe-tags {

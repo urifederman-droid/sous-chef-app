@@ -147,6 +147,18 @@
   font-style: italic;
 }
 
+.tag-category-group {
+  margin-bottom: 10px;
+}
+
+.tag-category-label {
+  font-size: 0.78rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
 .tags-container {
   display: flex;
   flex-wrap: wrap;
@@ -213,11 +225,27 @@
   border-radius: 12px;
 }
 
+.add-tag-category {
+  margin-bottom: 12px;
+}
+
+.add-tag-category:last-of-type {
+  margin-bottom: 14px;
+}
+
+.add-tag-category-label {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
 .default-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
 }
 
 .default-tag-option {
