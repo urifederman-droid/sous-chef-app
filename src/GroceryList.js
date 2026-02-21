@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Settings, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import './GroceryList.css';
@@ -29,7 +28,6 @@ function saveUserStores(stores) {
 }
 
 function GroceryList() {
-  const navigate = useNavigate();
   const [groceryList, setGroceryList] = useState([]);
   const [newItem, setNewItem] = useState('');
   const [storePreferences, setStorePreferences] = useState({});
