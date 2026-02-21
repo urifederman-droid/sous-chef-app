@@ -32,7 +32,7 @@ function AccountSettings() {
     <div className="profile-page">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/account-settings" />
       <header className="profile-header">
-        <button className="back-btn" onClick={() => setSidebarOpen(true)}>
+        <button className="header-menu-btn" onClick={() => setSidebarOpen(true)}>
           <Menu size={24} />
         </button>
         <h1>Profile</h1>

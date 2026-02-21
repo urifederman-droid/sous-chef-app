@@ -142,7 +142,7 @@ function GroceryList() {
       {/* Header */}
       <header className="page-header">
         <div className="header-left">
-          <button className="back-btn" onClick={() => setSidebarOpen(true)}>
+          <button className="header-menu-btn" onClick={() => setSidebarOpen(true)}>
             <Menu size={20} />
           </button>
           <h1>Grocery List</h1>
