@@ -230,7 +230,7 @@
 /* Input Bar */
 .chat-input-container {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   padding: 12px 16px;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
@@ -258,7 +258,7 @@
 .chat-input-bar {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   background: var(--muted);
   border-radius: 24px;
@@ -272,6 +272,10 @@
   font-size: 15px;
   color: var(--foreground);
   outline: none;
+  resize: none;
+  max-height: 120px;
+  line-height: 1.4;
+  font-family: inherit;
 }
 
 .chat-input::placeholder {

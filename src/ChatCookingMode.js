@@ -58,6 +58,7 @@ function ChatCookingMode() {
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const [pickerSelections, setPickerSelections] = useState([]);
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
 
@@ -269,6 +270,7 @@ const handleSendMessage = async () => {
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setUserInput('');
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setPendingPhotos([]);
     
     setPreLoading(true);
@@ -761,12 +763,23 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
           <Plus size={20} />
         </button>
         <div className="chat-input-bar">
-          <input
+          <textarea
+            ref={textareaRef}
             className="chat-input"
             placeholder="Ask anything"
             value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            rows={1}
+            onChange={(e) => {
+              setUserInput(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
           />
           {(userInput.trim() || pendingPhotos.length > 0) ? (
             <button className="send-btn" onClick={handleSendMessage} disabled={loading}>
