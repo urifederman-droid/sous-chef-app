@@ -398,7 +398,8 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
           existing.push({
             id: Date.now().toString(),
             title,
-            addedDate: new Date().toISOString()
+            addedDate: new Date().toISOString(),
+            chatHistory: newMessages.map(m => ({ role: m.role, content: m.content }))
           });
           localStorage.setItem('wantToCook', JSON.stringify(existing));
           const confirmMsg = { role: 'assistant', content: `Saved "${title}" to your Want to Cook list!`, timestamp: new Date() };

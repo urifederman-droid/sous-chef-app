@@ -35,8 +35,12 @@ function WantToCook() {
     saveList(wantToCook.filter(item => item.id !== id));
   };
 
-  const cookRecipe = (title) => {
-    localStorage.setItem('pendingRecipeRequest', title);
+  const cookRecipe = (item) => {
+    if (item.chatHistory) {
+      localStorage.setItem('pendingChatHistory', JSON.stringify(item.chatHistory));
+    } else {
+      localStorage.setItem('pendingRecipeRequest', item.title);
+    }
     navigate('/cook');
   };
 
@@ -99,8 +103,8 @@ function WantToCook() {
                 <div className="card-content">
                   <h3 className="card-title">{item.title}</h3>
                   <div className="card-actions">
-                    <button className="cook-btn" onClick={() => cookRecipe(item.title)}>
-                      Start Cooking
+                    <button className="cook-btn" onClick={() => cookRecipe(item)}>
+                      {item.chatHistory ? 'Continue Chat' : 'Start Cooking'}
                     </button>
                     <button className="remove-btn" onClick={() => removeRecipe(item.id)}>
                       <X size={16} />
