@@ -197,54 +197,87 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.card-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--foreground);
-}
-
-.card-actions {
+.header-right-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.cook-btn {
-  padding: 8px 16px;
-  background: var(--primary);
-  color: var(--primary-foreground);
+.edit-mode-btn {
+  padding: 6px 14px;
   border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
+  background: none;
+  color: var(--primary);
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
 }
 
-.cook-btn:hover {
+.card-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.card-inline-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--foreground);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+
+.cook-btn-inline {
+  padding: 7px 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.cook-btn-inline:hover {
   opacity: 0.9;
 }
 
-.remove-btn {
+.delete-badge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--destructive, #d93025);
+  color: white;
+  border: 2px solid var(--background);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: transparent;
   cursor: pointer;
-  color: var(--muted-foreground);
-}
-
-.remove-btn:hover {
-  color: var(--destructive);
-  border-color: var(--destructive);
+  z-index: 5;
+  padding: 0;
 }

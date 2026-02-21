@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, ChefHat, X } from 'lucide-react';
+import { Clock, ChefHat, X, Menu } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './ContinueCooking.css';
 
 function ContinueCooking() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
@@ -36,13 +39,19 @@ function ContinueCooking() {
 
   return (
     <div className="continue-cooking-page">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/continue-cooking" />
       <header className="page-header">
         <div className="header-left">
-          <button className="back-btn" onClick={() => navigate('/')}>
-            <ArrowLeft size={20} />
+          <button className="back-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
           </button>
           <h1>Continue Cooking</h1>
         </div>
+        {sessions.length > 0 && (
+          <button className="edit-mode-btn" onClick={() => setEditMode(!editMode)}>
+            {editMode ? 'Done' : 'Edit'}
+          </button>
+        )}
       </header>
 
       <main className="page-content">
@@ -57,31 +66,23 @@ function ContinueCooking() {
         ) : (
           <div className="card-list">
             {sessions.map(session => (
-              <button
-                key={session.id}
-                className="session-card"
-                onClick={() => resumeSession(session)}
-              >
-                <div className="session-card-header">
-                  <h3 className="session-title">{session.title}</h3>
-                  <button
-                    className="dismiss-btn"
-                    onClick={(e) => { e.stopPropagation(); dismissSession(session.id); }}
-                  >
-                    <X size={16} />
+              <div key={session.id} className="recipe-card card-inline">
+                {editMode && (
+                  <button className="delete-badge" onClick={() => dismissSession(session.id)}>
+                    <X size={14} />
                   </button>
-                </div>
-                <div className="session-meta">
-                  <span className="session-time">
-                    <Clock size={14} />
+                )}
+                <div className="card-inline-info">
+                  <h3 className="card-title">{session.title}</h3>
+                  <span className="card-meta">
+                    <Clock size={12} />
                     {getTimeAgo(session.updatedAt)}
                   </span>
                 </div>
-                <div className="continue-banner">
-                  <span>Continue cooking</span>
-                  <ChefHat size={16} />
-                </div>
-              </button>
+                <button className="cook-btn-inline" onClick={() => resumeSession(session)}>
+                  Continue
+                </button>
+              </div>
             ))}
           </div>
         )}

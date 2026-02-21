@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
 import { uploadPhoto } from './firebaseStorage';
 import { getUserPreferencesPrompt } from './userPreferences';
-import { Menu, SquarePen, Pin, Plus, Send, Camera, Mic, X, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Search, ImageIcon } from 'lucide-react';
+import { Menu, SquarePen, Pin, Plus, Send, Camera, Mic, X, ImageIcon } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './ChatCookingMode.css';
 import ReactMarkdown from 'react-markdown';
 
@@ -587,20 +588,6 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
     return line.replace(/[#*]/g, '').trim() || 'Recipe';
   })();
 
-  const recentSessions = (() => {
-    try {
-      const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
-      const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
-      return sessions.filter(s => s.id !== sessionId && new Date(s.updatedAt).getTime() > twoDaysAgo);
-    } catch { return []; }
-  })();
-
-  const handleResumeSession = (id) => {
-    localStorage.setItem('resumeSessionId', id);
-    setSidebarOpen(false);
-    window.location.href = '/cook';
-  };
-
   const handleNewChat = () => {
     setSidebarOpen(false);
     window.location.href = '/cook';
@@ -608,73 +595,7 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
 
   return (
     <div className="chat-cooking-mode">
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}>
-          <div className="sidebar" onClick={(e) => e.stopPropagation()}>
-            <div className="sidebar-header">
-              <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>
-                <X size={20} />
-              </button>
-              <button className="sidebar-new-chat" onClick={handleNewChat}>
-                <SquarePen size={18} />
-              </button>
-            </div>
-
-            {/* Navigation */}
-            <nav className="sidebar-nav">
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/'); }}>
-                <Search size={18} />
-                <span>Home</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/want-to-cook'); }}>
-                <ChefHat size={18} />
-                <span>Want to Cook</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/continue-cooking'); }}>
-                <Clock size={18} />
-                <span>Continue Cooking</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/my-recipes'); }}>
-                <BookOpen size={18} />
-                <span>My Recipes</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/grocery-list'); }}>
-                <ShoppingCart size={18} />
-                <span>Grocery List</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/meal-schedule'); }}>
-                <CalendarDays size={18} />
-                <span>Meal Schedule</span>
-              </button>
-            </nav>
-
-            {/* Recent Sessions */}
-            {recentSessions.length > 0 && (
-              <div className="sidebar-section">
-                <h3 className="sidebar-section-title">Recent</h3>
-                {recentSessions.map(session => (
-                  <button
-                    key={session.id}
-                    className="sidebar-session-item"
-                    onClick={() => handleResumeSession(session.id)}
-                  >
-                    {session.title}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Profile */}
-            <div className="sidebar-footer">
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/account-settings'); }}>
-                <User size={18} />
-                <span>Profile</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/cook" />
 
       {/* ChatGPT-Style Header */}
       <header className="chat-header">

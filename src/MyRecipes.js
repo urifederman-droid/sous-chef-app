@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, X, ChevronDown } from 'lucide-react';
+import { Star, X, ChevronDown, Menu } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './MyRecipes.css';
 
 function MyRecipes() {
@@ -8,7 +9,8 @@ function MyRecipes() {
   const [recipes, setRecipes] = useState([]);
   const [expandedRecipe, setExpandedRecipe] = useState(null);
   const [expandedRating, setExpandedRating] = useState(null);
-  const [editingRecipe, setEditingRecipe] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [activeTagFilter, setActiveTagFilter] = useState(null);
   const [ratingFilter, setRatingFilter] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -71,7 +73,6 @@ function MyRecipes() {
     const updated = recipes.filter((_, i) => i !== index);
     setRecipes(updated);
     localStorage.setItem('savedRecipes', JSON.stringify(updated));
-    setEditingRecipe(null);
   };
 
   const formatDate = (dateString) => {
@@ -85,13 +86,19 @@ function MyRecipes() {
 
   return (
     <div className="my-recipes-page">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/my-recipes" />
       <header className="page-header">
         <div className="header-left">
-          <button className="back-btn" onClick={() => navigate('/')}>
-            <ArrowLeft size={20} />
+          <button className="back-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
           </button>
           <h1>My Recipes</h1>
         </div>
+        {recipes.length > 0 && (
+          <button className="edit-mode-btn" onClick={() => setEditMode(!editMode)}>
+            {editMode ? 'Done' : 'Edit'}
+          </button>
+        )}
       </header>
 
       {hasAnyFilters && (
@@ -199,6 +206,11 @@ function MyRecipes() {
               const index = recipes.indexOf(recipe);
               return (
               <div key={index} className="recipe-card">
+                {editMode && (
+                  <button className="delete-badge" onClick={() => deleteRecipe(index)}>
+                    <X size={14} />
+                  </button>
+                )}
                 {/* Header */}
                 <div className="recipe-card-header">
                   <div className="recipe-card-info">
@@ -214,23 +226,10 @@ function MyRecipes() {
                       </div>
                     )}
                   </div>
-                  <button
-                    className="menu-btn"
-                    onClick={() => setEditingRecipe(editingRecipe === index ? null : index)}
-                  >
-                    {editingRecipe === index ? <X size={16} /> : '⋮'}
+                  <button className="cook-btn-inline" onClick={() => cookAgain(recipe)}>
+                    Cook Again
                   </button>
                 </div>
-
-                {/* Delete option */}
-                {editingRecipe === index && (
-                  <button
-                    className="delete-recipe-btn"
-                    onClick={() => deleteRecipe(index)}
-                  >
-                    Delete Recipe
-                  </button>
-                )}
 
                 {/* Rating */}
                 {recipe.rating > 0 && (
@@ -321,13 +320,6 @@ function MyRecipes() {
                   </>
                 )}
 
-                {/* Cook Again */}
-                <button
-                  className="cook-again-btn"
-                  onClick={() => cookAgain(recipe)}
-                >
-                  Cook Again
-                </button>
               </div>
             );
             })}

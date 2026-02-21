@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Mic, Camera, Menu, SquarePen, X } from 'lucide-react';
+import { Search, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Mic, Plus, Camera, Menu, X, ImageIcon } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './Home.css';
 
 function Home() {
@@ -8,7 +9,10 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const recognitionRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const libraryInputRef = useRef(null);
 
   const toggleDictation = () => {
     if (isListening) {
@@ -48,82 +52,16 @@ function Home() {
     }
   };
 
-  const recentSessions = (() => {
-    try {
-      const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
-      const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
-      return sessions.filter(s => new Date(s.updatedAt).getTime() > twoDaysAgo);
-    } catch { return []; }
-  })();
-
-  const handleResumeSession = (id) => {
-    localStorage.setItem('resumeSessionId', id);
-    setSidebarOpen(false);
-    navigate('/cook');
+  const handlePhotoSelected = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      navigate('/photo-import');
+    }
+    e.target.value = '';
   };
 
   return (
     <div className="home">
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}>
-          <div className="sidebar" onClick={(e) => e.stopPropagation()}>
-            <div className="sidebar-header">
-              <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>
-                <X size={20} />
-              </button>
-              <button className="sidebar-new-chat" onClick={() => { setSidebarOpen(false); navigate('/cook'); }}>
-                <SquarePen size={18} />
-              </button>
-            </div>
-
-            <nav className="sidebar-nav">
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/want-to-cook'); }}>
-                <ChefHat size={18} />
-                <span>Want to Cook</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/continue-cooking'); }}>
-                <Clock size={18} />
-                <span>Continue Cooking</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/my-recipes'); }}>
-                <BookOpen size={18} />
-                <span>My Recipes</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/grocery-list'); }}>
-                <ShoppingCart size={18} />
-                <span>Grocery List</span>
-              </button>
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/meal-schedule'); }}>
-                <CalendarDays size={18} />
-                <span>Meal Schedule</span>
-              </button>
-            </nav>
-
-            {recentSessions.length > 0 && (
-              <div className="sidebar-section">
-                <h3 className="sidebar-section-title">Recent</h3>
-                {recentSessions.map(session => (
-                  <button
-                    key={session.id}
-                    className="sidebar-session-item"
-                    onClick={() => handleResumeSession(session.id)}
-                  >
-                    {session.title}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div className="sidebar-footer">
-              <button className="sidebar-nav-item" onClick={() => { setSidebarOpen(false); navigate('/account-settings'); }}>
-                <User size={18} />
-                <span>Profile</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/" />
 
       {/* Status Bar Spacer */}
       <div className="status-spacer" />
@@ -177,9 +115,9 @@ function Home() {
             <button
               type="button"
               className="search-icon-btn"
-              onClick={() => navigate('/photo-import')}
+              onClick={() => setShowPhotoPicker(true)}
             >
-              <Camera size={20} />
+              <Plus size={20} />
             </button>
           </div>
         </div>
@@ -232,6 +170,34 @@ function Home() {
           <span>Schedule</span>
         </button>
       </nav>
+
+      {/* Hidden file inputs */}
+      <input type="file" accept="image/*" capture="environment" ref={cameraInputRef} style={{ display: 'none' }} onChange={() => navigate('/photo-import')} />
+      <input type="file" accept="image/*" multiple ref={libraryInputRef} style={{ display: 'none' }} onChange={() => navigate('/photo-import')} />
+
+      {/* Photo Picker Bottom Sheet */}
+      {showPhotoPicker && (
+        <div className="photo-picker-overlay" onClick={() => setShowPhotoPicker(false)}>
+          <div className="photo-picker-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="photo-picker-header">
+              <span className="photo-picker-title">Add Photo</span>
+              <button className="photo-picker-close" onClick={() => setShowPhotoPicker(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="picker-options">
+              <button className="picker-option-btn" onClick={() => { setShowPhotoPicker(false); cameraInputRef.current?.click(); }}>
+                <Camera size={24} />
+                <span>Camera</span>
+              </button>
+              <button className="picker-option-btn" onClick={() => { setShowPhotoPicker(false); libraryInputRef.current?.click(); }}>
+                <ImageIcon size={24} />
+                <span>Photo Library</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

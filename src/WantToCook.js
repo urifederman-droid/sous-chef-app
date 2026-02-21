@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { Plus, X, Menu } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './WantToCook.css';
 
 function WantToCook() {
@@ -8,6 +9,8 @@ function WantToCook() {
   const [wantToCook, setWantToCook] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRecipe, setNewRecipe] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('wantToCook') || '[]');
@@ -46,17 +49,25 @@ function WantToCook() {
 
   return (
     <div className="want-to-cook-page">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/want-to-cook" />
       {/* Header */}
       <header className="page-header">
         <div className="header-left">
-          <button className="back-btn" onClick={() => navigate('/')}>
-            <ArrowLeft size={20} />
+          <button className="back-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
           </button>
           <h1>Want to Cook</h1>
         </div>
-        <button className="add-btn" onClick={() => setShowAddForm(true)}>
-          <Plus size={20} />
-        </button>
+        <div className="header-right-actions">
+          {wantToCook.length > 0 && (
+            <button className="edit-mode-btn" onClick={() => setEditMode(!editMode)}>
+              {editMode ? 'Done' : 'Edit'}
+            </button>
+          )}
+          <button className="add-btn" onClick={() => setShowAddForm(true)}>
+            <Plus size={20} />
+          </button>
+        </div>
       </header>
 
       {/* Add Item Modal */}
@@ -99,18 +110,16 @@ function WantToCook() {
         ) : (
           <div className="card-list">
             {wantToCook.map((item) => (
-              <div key={item.id} className="recipe-card">
-                <div className="card-content">
-                  <h3 className="card-title">{item.title}</h3>
-                  <div className="card-actions">
-                    <button className="cook-btn" onClick={() => cookRecipe(item)}>
-                      {item.chatHistory ? 'Continue Chat' : 'Start Cooking'}
-                    </button>
-                    <button className="remove-btn" onClick={() => removeRecipe(item.id)}>
-                      <X size={16} />
-                    </button>
-                  </div>
-                </div>
+              <div key={item.id} className="recipe-card card-inline">
+                {editMode && (
+                  <button className="delete-badge" onClick={() => removeRecipe(item.id)}>
+                    <X size={14} />
+                  </button>
+                )}
+                <h3 className="card-title">{item.title}</h3>
+                <button className="cook-btn-inline" onClick={() => cookRecipe(item)}>
+                  {item.chatHistory ? 'Continue' : 'Cook'}
+                </button>
               </div>
             ))}
           </div>

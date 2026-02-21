@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Settings } from 'lucide-react';
+import { Settings, Menu } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './GroceryList.css';
 
 function normalizeIngredient(name) {
@@ -36,6 +37,7 @@ function GroceryList() {
   const [groupBy, setGroupBy] = useState('recipe');
   const [showSettings, setShowSettings] = useState(false);
   const [newStore, setNewStore] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const prefs = loadStorePreferences();
@@ -138,11 +140,12 @@ function GroceryList() {
 
   return (
     <div className="grocery-list-page">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/grocery-list" />
       {/* Header */}
       <header className="page-header">
         <div className="header-left">
-          <button className="back-btn" onClick={() => navigate('/')}>
-            <ArrowLeft size={20} />
+          <button className="back-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
           </button>
           <h1>Grocery List</h1>
         </div>

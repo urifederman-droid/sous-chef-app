@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './AccountSettings.css';
 
 function AccountSettings() {
@@ -9,6 +10,7 @@ function AccountSettings() {
   const [cuisines, setCuisines] = useState('');
   const [dislikes, setDislikes] = useState('');
   const [saved, setSaved] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -30,9 +32,10 @@ function AccountSettings() {
 
   return (
     <div className="profile-page">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/account-settings" />
       <header className="profile-header">
-        <button className="back-btn" onClick={() => navigate('/')}>
-          <ChevronLeft size={24} />
+        <button className="back-btn" onClick={() => setSidebarOpen(true)}>
+          <Menu size={24} />
         </button>
         <h1>Profile</h1>
         <div className="header-spacer" />

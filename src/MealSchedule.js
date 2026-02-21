@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, BookOpen, Menu } from 'lucide-react';
+import Sidebar from './Sidebar';
 import './MealSchedule.css';
 
 function getWeekStart(date) {
@@ -35,6 +36,7 @@ function MealSchedule() {
   const [selectedTag, setSelectedTag] = useState(null);
   const [showLibrary, setShowLibrary] = useState(false);
   const [savedRecipes, setSavedRecipes] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('mealSchedule') || '{}');
@@ -132,9 +134,12 @@ function MealSchedule() {
     setShowLibrary(false);
   };
 
-  const handleMealClick = (meal) => {
-    if (!meal.chatHistory) return;
-    localStorage.setItem('pendingChatHistory', JSON.stringify(meal.chatHistory));
+  const goToRecipe = (meal) => {
+    if (meal.chatHistory) {
+      localStorage.setItem('pendingChatHistory', JSON.stringify(meal.chatHistory));
+    } else {
+      localStorage.setItem('pendingRecipeRequest', meal.title);
+    }
     navigate('/cook');
   };
 
@@ -147,11 +152,12 @@ function MealSchedule() {
 
   return (
     <div className="meal-schedule-page">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPath="/meal-schedule" />
       {/* Header */}
       <header className="page-header">
         <div className="header-left">
-          <button className="back-btn" onClick={() => navigate('/')}>
-            <ArrowLeft size={20} />
+          <button className="back-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
           </button>
           <h1>Meal Schedule</h1>
         </div>
@@ -252,18 +258,19 @@ function MealSchedule() {
                 {meals.length > 0 && (
                   <div className="meals-list">
                     {meals.map(meal => (
-                      <div
-                        key={meal.id}
-                        className={`meal-item${meal.chatHistory ? ' clickable' : ''}`}
-                        onClick={() => handleMealClick(meal)}
-                      >
+                      <div key={meal.id} className="meal-item">
                         <div className="meal-info">
                           {meal.tag && <span className={`meal-tag tag-${meal.tag}`}>{meal.tag}</span>}
                           <span className="meal-title">{meal.title}</span>
                         </div>
-                        <button className="delete-meal-btn" onClick={(e) => { e.stopPropagation(); deleteMeal(dateKey, meal.id); }}>
-                          <X size={14} />
-                        </button>
+                        <div className="meal-actions">
+                          <button className="meal-recipe-btn" onClick={() => goToRecipe(meal)}>
+                            {meal.chatHistory ? 'Go to Recipe' : 'Generate Recipe'}
+                          </button>
+                          <button className="delete-meal-btn" onClick={() => deleteMeal(dateKey, meal.id)}>
+                            <X size={14} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
