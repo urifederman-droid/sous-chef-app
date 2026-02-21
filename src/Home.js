@@ -122,11 +122,21 @@ function Home() {
       {/* Search Bar */}
       <form onSubmit={handleSearch} className="search-section">
         <div className="search-bar">
-          <input
-            type="text"
+          <textarea
             placeholder="AI Generate or Import Recipe"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            rows={1}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSearch(e);
+              }
+            }}
           />
           <div className="search-actions">
             <button type="submit" className="search-icon-btn">

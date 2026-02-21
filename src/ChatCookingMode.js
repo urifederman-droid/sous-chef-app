@@ -688,7 +688,7 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
               {msg.photos && msg.photos.length > 1 && (
                 <div className="message-photos">
                   {msg.photos.map((photo, pi) => (
-                    <img key={pi} src={photo} alt={`Photo ${pi + 1}`} />
+                    <img key={pi} src={photo} alt={`Capture ${pi + 1}`} />
                   ))}
                 </div>
               )}
@@ -821,6 +821,9 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
                   {pickerSelections.map((photo, i) => (
                     <div key={i} className="picker-thumb-wrapper">
                       <img src={photo} alt={`Selection ${i + 1}`} className="picker-thumb" />
+                      <button className="picker-thumb-remove" onClick={() => setPickerSelections(prev => prev.filter((_, idx) => idx !== i))}>
+                        <X size={12} />
+                      </button>
                       <span className="picker-thumb-number">{i + 1}</span>
                     </div>
                   ))}

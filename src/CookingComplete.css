@@ -103,6 +103,166 @@
   font-family: inherit;
 }
 
+.sub-ratings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: -10px;
+  margin-bottom: 25px;
+}
+
+.sub-rating-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sub-rating-label {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.sub-rating-stars .star {
+  font-size: 1.5rem;
+}
+
 .done-btn:hover {
   background: #555;
+}
+
+.tags-section {
+  margin-bottom: 25px;
+}
+
+.tags-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.tags-loading {
+  font-size: 0.85rem;
+  color: #999;
+  font-style: italic;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #f3f2f0;
+  border: 1px solid #e0e0e0;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.tag-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #999;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.tag-remove-btn:hover {
+  background: #ddd;
+  color: #333;
+}
+
+.add-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px dashed #ccc;
+  background: transparent;
+  color: #999;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.add-tag-btn:hover {
+  border-color: #999;
+  color: #666;
+}
+
+.add-tag-menu {
+  margin-top: 12px;
+  padding: 14px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+}
+
+.default-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.default-tag-option {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #555;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.default-tag-option:hover {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+.custom-tag-input {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-tag-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.custom-tag-input input:focus {
+  outline: none;
+  border-color: #999;
+}
+
+.custom-tag-input button {
+  padding: 8px 16px;
+  border: none;
+  background: #333;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
 }

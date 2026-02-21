@@ -231,16 +231,20 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.search-bar input {
+.search-bar textarea {
   flex: 1;
   background: transparent;
   border: none;
   font-size: 1rem;
   color: var(--foreground);
   outline: none;
+  resize: none;
+  font-family: inherit;
+  line-height: 1.4;
+  overflow: hidden;
 }
 
-.search-bar input::placeholder {
+.search-bar textarea::placeholder {
   color: var(--muted-foreground);
 }
 

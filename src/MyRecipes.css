@@ -178,3 +178,100 @@
 .start-cooking-btn:hover {
   opacity: 0.9;
 }
+
+.rating-details-toggle {
+  display: inline-block;
+  border: none;
+  background: none;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 8px;
+  font-family: inherit;
+}
+
+.rating-details-toggle:hover {
+  color: var(--foreground);
+}
+
+.sub-ratings-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 4px;
+  margin-bottom: 12px;
+}
+
+.sub-rating-display-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sub-rating-display-label {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  min-width: 80px;
+}
+
+.tag-filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+}
+
+.tag-filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tag-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.tag-filter {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.tag-filter:hover {
+  background: var(--accent);
+}
+
+.tag-filter.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.recipe-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.recipe-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: var(--accent);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
