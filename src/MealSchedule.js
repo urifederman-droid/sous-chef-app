@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus, X, BookOpen, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import InlineAgentChat from './InlineAgentChat';
 import './MealSchedule.css';
 
 function getWeekStart(date) {
@@ -162,6 +163,11 @@ function MealSchedule() {
           <h1>Meal Schedule</h1>
         </div>
       </header>
+
+      <InlineAgentChat
+        systemPrompt={`You are a friendly cooking assistant helping the user manage their meal schedule. Be concise — 2-3 sentences max unless they ask for detail. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n\nTheir meal schedule: ${JSON.stringify(Object.fromEntries(Object.entries(schedule).slice(0, 30).map(([date, meals]) => [date, meals.map(m => m.title)]))) || '{}'}.`}
+        placeholder="What's for dinner this week?"
+      />
 
       {/* Add Meal Modal */}
       {addingDay && (

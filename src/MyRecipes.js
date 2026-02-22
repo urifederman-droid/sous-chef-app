@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, X, ChevronDown, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import InlineAgentChat from './InlineAgentChat';
 import './MyRecipes.css';
 
 function MyRecipes() {
@@ -100,6 +101,18 @@ function MyRecipes() {
           </button>
         )}
       </header>
+
+      <InlineAgentChat
+        systemPrompt={`You are a friendly cooking assistant helping the user search and compare recipes in their cookbook. Be concise — 2-3 sentences max unless they ask for detail.\n\nTheir saved recipes: ${recipes.slice(0, 30).map(r => {
+          let info = r.title;
+          if (r.rating) info += ` (${r.rating} stars)`;
+          if (r.tags && r.tags.length) info += ` [${r.tags.join(', ')}]`;
+          if (r.cookedDate) info += ` cooked ${new Date(r.cookedDate).toLocaleDateString()}`;
+          if (r.notes) info += ` notes: "${r.notes}"`;
+          return info;
+        }).join('; ') || 'No recipes yet'}.`}
+        placeholder="Find a recipe in your cookbook..."
+      />
 
       {hasAnyFilters && (
         <div className="filter-bar" ref={filterBarRef}>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, ChefHat, X, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import InlineAgentChat from './InlineAgentChat';
 import './ContinueCooking.css';
 
 function ContinueCooking() {
@@ -53,6 +54,11 @@ function ContinueCooking() {
           </button>
         )}
       </header>
+
+      <InlineAgentChat
+        systemPrompt={`You are a friendly cooking assistant helping the user find and resume their in-progress cooking sessions. Be concise — 2-3 sentences max unless they ask for detail.\n\nTheir active sessions: ${sessions.slice(0, 30).map(s => `${s.title} (last active: ${s.updatedAt ? new Date(s.updatedAt).toLocaleDateString() : 'unknown'})`).join('; ') || 'No sessions yet'}.`}
+        placeholder="Which recipe was I working on?"
+      />
 
       <main className="page-content">
         {sessions.length === 0 ? (

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, X, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import InlineAgentChat from './InlineAgentChat';
 import './WantToCook.css';
 
 function WantToCook() {
@@ -69,6 +70,11 @@ function WantToCook() {
           </button>
         </div>
       </header>
+
+      <InlineAgentChat
+        systemPrompt={`You are a friendly cooking assistant helping the user decide what to cook from their wishlist. Be concise — 2-3 sentences max unless they ask for detail. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n\nTheir wishlist items: ${wantToCook.slice(0, 30).map(i => i.title).join(', ') || 'No items yet'}.`}
+        placeholder="What should I cook tonight?"
+      />
 
       {/* Add Item Modal */}
       {showAddForm && (
