@@ -1,17 +1,43 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
-import { Send, X } from 'lucide-react';
+import { Send, X, ChefHat } from 'lucide-react';
 import { getUserPreferencesPrompt } from './userPreferences';
 import ReactMarkdown from 'react-markdown';
 import './InlineAgentChat.css';
 
+function looksLikeRecipe(text) {
+  const hasIngredientList = /^[-•*]\s+.+/m.test(text) && /ingredient/i.test(text);
+  const hasNumberedSteps = /^\d+[.)]\s+.+/m.test(text);
+  return hasIngredientList && hasNumberedSteps;
+}
+
+function extractRecipeTitle(text) {
+  const headingMatch = text.match(/^#+\s+(.+)/m);
+  if (headingMatch) return headingMatch[1].replace(/[*_]/g, '').trim();
+  const boldMatch = text.match(/\*\*(.+?)\*\*/);
+  if (boldMatch) return boldMatch[1].trim();
+  const firstLine = text.split('\n')[0].replace(/[#*_]/g, '').trim();
+  return firstLine.length > 5 && firstLine.length < 80 ? firstLine : 'Recipe';
+}
+
 function InlineAgentChat({ systemPrompt, placeholder }) {
+  const navigate = useNavigate();
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const handleStartCooking = (recipeText) => {
+    const title = extractRecipeTitle(recipeText);
+    localStorage.setItem('pendingCookAgainData', JSON.stringify({
+      pinnedRecipeText: recipeText,
+      title
+    }));
+    navigate('/cook');
+  };
 
   useEffect(() => {
     if (isExpanded) {
@@ -93,6 +119,12 @@ function InlineAgentChat({ systemPrompt, placeholder }) {
                   <div className="inline-msg-content">{msg.content}</div>
                 )}
               </div>
+              {msg.role === 'assistant' && !msg.streaming && looksLikeRecipe(msg.content) && (
+                <button className="inline-start-cooking-btn" onClick={() => handleStartCooking(msg.content)}>
+                  <ChefHat size={16} />
+                  Start Cooking
+                </button>
+              )}
             </div>
           ))}
           <div ref={messagesEndRef} />
