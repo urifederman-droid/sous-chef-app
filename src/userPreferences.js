@@ -466,7 +466,6 @@ function buildProfilePrompt(profile) {
       // Low-rated patterns to avoid
       const lowRated = savedRecipes.filter(r => r.rating > 0 && r.rating <= 2 && r.metadata?.discovery?.cuisine);
       if (lowRated.length > 0) {
-        const lowCuisines = [...new Set(lowRated.map(r => r.metadata.discovery.cuisine))];
         cookbookParts.push(`didn't enjoy: ${lowRated.slice(0, 3).map(r => `${r.title} (${r.rating} stars)`).join(', ')}`);
       }
 
