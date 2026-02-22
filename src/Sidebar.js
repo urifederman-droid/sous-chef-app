@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, SquarePen, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Search } from 'lucide-react';
+import { X, SquarePen, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Home } from 'lucide-react';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
-  { path: '/', label: 'Home', icon: Search },
+  { path: '/', label: 'Home', icon: Home },
   { path: '/want-to-cook', label: 'Want to Cook', icon: ChefHat },
   { path: '/continue-cooking', label: 'Continue Cooking', icon: Clock },
-  { path: '/my-recipes', label: 'My Recipes', icon: BookOpen },
+  { path: '/my-recipes', label: 'My Cookbook', icon: BookOpen },
   { path: '/grocery-list', label: 'Grocery List', icon: ShoppingCart },
   { path: '/meal-schedule', label: 'Meal Schedule', icon: CalendarDays },
 ];

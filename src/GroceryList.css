@@ -6,21 +6,19 @@
 }
 
 /* Settings gear button */
-.settings-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+.modify-stores-btn {
   border: none;
-  background: transparent;
+  background: none;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  color: var(--foreground);
+  font-family: inherit;
+  padding: 6px 14px;
 }
 
-.settings-btn:hover {
-  background: var(--accent);
+.modify-stores-btn:hover {
+  opacity: 0.8;
 }
 
 /* Modal (shared with WantToCook) */

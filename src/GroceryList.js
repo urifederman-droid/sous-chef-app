@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import './GroceryList.css';
 
@@ -147,8 +147,8 @@ function GroceryList() {
           </button>
           <h1>Grocery List</h1>
         </div>
-        <button className="settings-btn" onClick={() => setShowSettings(true)}>
-          <Settings size={20} />
+        <button className="modify-stores-btn" onClick={() => setShowSettings(true)}>
+          Modify Stores
         </button>
       </header>
 

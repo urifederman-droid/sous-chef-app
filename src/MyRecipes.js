@@ -92,7 +92,7 @@ function MyRecipes() {
           <button className="header-menu-btn" onClick={() => setSidebarOpen(true)}>
             <Menu size={20} />
           </button>
-          <h1>My Recipes</h1>
+          <h1>My Cookbook</h1>
         </div>
         {recipes.length > 0 && (
           <button className="edit-mode-btn" onClick={() => setEditMode(!editMode)}>
