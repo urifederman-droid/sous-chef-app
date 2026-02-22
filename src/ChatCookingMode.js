@@ -612,7 +612,7 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
         // Only pin as recipe if it looks like a full structured recipe
         // (has ingredient list items AND numbered steps), not just a mention of the words
         const hasIngredientList = /^[-•*]\s+.+/m.test(fullContent) && /ingredient/i.test(fullContent);
-        const hasNumberedSteps = /^\d+[\.\)]\s+.+/m.test(fullContent);
+        const hasNumberedSteps = /^\d+[.)]\s+.+/m.test(fullContent);
         if (hasIngredientList && hasNumberedSteps) {
           setPinnedRecipe(fullContent);
         }
