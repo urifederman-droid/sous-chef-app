@@ -7,9 +7,11 @@ import ReactMarkdown from 'react-markdown';
 import './InlineAgentChat.css';
 
 function looksLikeRecipe(text) {
-  const hasIngredientList = /^[-•*]\s+.+/m.test(text) && /ingredient/i.test(text);
-  const hasNumberedSteps = /^\d+[.)]\s+.+/m.test(text);
-  return hasIngredientList && hasNumberedSteps;
+  const hasIngredientList = /ingredient/i.test(text) && (/^[-•*]\s+.+/m.test(text) || /^\s*[-•*]\s+\d/m.test(text));
+  const hasSteps = /^\d+[.)]\s+.+/m.test(text) || /instruction/i.test(text) || /step\s*\d/i.test(text) || /direction/i.test(text);
+  // Also detect by sheer recipe structure: bullet list + cooking verbs
+  const hasCookingContent = /\b(cook|bake|saut[ée]|simmer|boil|roast|fry|dice|chop|mix|stir|preheat)\b/i.test(text);
+  return (hasIngredientList && hasSteps) || (hasIngredientList && hasCookingContent);
 }
 
 function extractRecipeTitle(text) {
@@ -79,7 +81,7 @@ function InlineAgentChat({ systemPrompt, placeholder }) {
 
       const stream = await anthropic.messages.stream({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
+        max_tokens: 3000,
         system: fullSystemPrompt,
         messages: conversationHistory
       });
