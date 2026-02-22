@@ -133,7 +133,7 @@ function Home() {
           onClick={() => navigate('/want-to-cook')}
         >
           <ChefHat size={24} />
-          <span>Want to Cook</span>
+          <span>Wishlist</span>
         </button>
         <button
           className="nav-tab"
@@ -147,14 +147,14 @@ function Home() {
           onClick={() => navigate('/my-recipes')}
         >
           <BookOpen size={24} />
-          <span>My Recipes</span>
+          <span>My Cookbook</span>
         </button>
         <button
           className="nav-tab"
           onClick={() => navigate('/grocery-list')}
         >
           <ShoppingCart size={24} />
-          <span>Grocery</span>
+          <span>Grocery List</span>
         </button>
         <button
           className="nav-tab"
