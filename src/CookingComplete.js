@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
+import { extractAndMergeSessionSignal } from './userPreferences';
 import './CookingComplete.css';
 
 const TAG_CATEGORIES = {
@@ -86,6 +87,9 @@ function CookingComplete() {
       savedRecipes[0].notes = notes;
       savedRecipes[0].tags = tags;
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+
+      // Fire-and-forget: extract signals from this cooking session
+      extractAndMergeSessionSignal(savedRecipes[0]).catch(() => {});
     }
     navigate('/');
   };

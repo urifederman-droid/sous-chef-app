@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X, Menu } from 'lucide-react';
+import { Plus, X, Menu, MoreHorizontal, CalendarDays } from 'lucide-react';
 import Sidebar from './Sidebar';
 import InlineAgentChat from './InlineAgentChat';
+import { logPassiveSignal } from './userPreferences';
 import './WantToCook.css';
 
 function WantToCook() {
@@ -12,11 +13,27 @@ function WantToCook() {
   const [newRecipe, setNewRecipe] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [schedulingItem, setSchedulingItem] = useState(null);
+  const [scheduleDate, setScheduleDate] = useState('');
+
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('wantToCook') || '[]');
     setWantToCook(saved);
   }, []);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [openMenuId]);
 
   const saveList = (list) => {
     setWantToCook(list);
@@ -31,6 +48,7 @@ function WantToCook() {
       addedDate: new Date().toISOString()
     };
     saveList([...wantToCook, item]);
+    logPassiveSignal('wishlist_add', { title: newRecipe.trim() });
     setNewRecipe('');
     setShowAddForm(false);
   };
@@ -46,6 +64,27 @@ function WantToCook() {
       localStorage.setItem('pendingRecipeRequest', item.title);
     }
     navigate('/cook');
+  };
+
+  const scheduleRecipe = (item) => {
+    setOpenMenuId(null);
+    setSchedulingItem(item);
+    setScheduleDate('');
+  };
+
+  const confirmSchedule = () => {
+    if (!scheduleDate || !schedulingItem) return;
+    const mealSchedule = JSON.parse(localStorage.getItem('mealSchedule') || '{}');
+    if (!mealSchedule[scheduleDate]) mealSchedule[scheduleDate] = [];
+    mealSchedule[scheduleDate].push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      title: schedulingItem.title,
+      source: 'wishlist',
+      chatHistory: schedulingItem.chatHistory || null
+    });
+    localStorage.setItem('mealSchedule', JSON.stringify(mealSchedule));
+    setSchedulingItem(null);
+    setScheduleDate('');
   };
 
   return (
@@ -73,7 +112,7 @@ function WantToCook() {
 
       <InlineAgentChat
         systemPrompt={`You are a friendly cooking assistant helping the user decide what to cook from their wishlist. Be concise — 2-3 sentences max unless they ask for detail. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n\nTheir wishlist items: ${wantToCook.slice(0, 30).map(i => i.title).join(', ') || 'No items yet'}.`}
-        placeholder="What should I cook tonight?"
+        placeholder="What can I help you find?"
       />
 
       {/* Add Item Modal */}
@@ -123,14 +162,57 @@ function WantToCook() {
                   </button>
                 )}
                 <h3 className="card-title">{item.title}</h3>
-                <button className="cook-btn-inline" onClick={() => cookRecipe(item)}>
-                  {item.chatHistory ? 'Continue' : 'Cook'}
-                </button>
+                <div className="card-actions">
+                  <button className="cook-btn-inline" onClick={() => cookRecipe(item)}>
+                    {item.chatHistory ? 'Continue' : 'Cook'}
+                  </button>
+                  <div className="overflow-menu-wrapper" ref={openMenuId === item.id ? menuRef : null}>
+                    <button className="overflow-btn" onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}>
+                      <MoreHorizontal size={18} />
+                    </button>
+                    {openMenuId === item.id && (
+                      <div className="overflow-menu">
+                        <button className="overflow-menu-item" onClick={() => scheduleRecipe(item)}>
+                          <CalendarDays size={16} />
+                          Schedule
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         )}
       </main>
+
+      {/* Schedule Modal */}
+      {schedulingItem && (
+        <div className="modal-overlay" onClick={() => setSchedulingItem(null)}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Schedule "{schedulingItem.title}"</h2>
+              <button className="modal-close" onClick={() => setSchedulingItem(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <label className="form-label">Pick a date</label>
+              <input
+                type="date"
+                className="form-input"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                autoFocus
+              />
+              <button className="modal-submit" onClick={confirmSchedule} disabled={!scheduleDate}>
+                Add to Schedule
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

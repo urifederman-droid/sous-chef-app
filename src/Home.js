@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Mic, Plus, Camera, Menu, X, ImageIcon } from 'lucide-react';
+import { getUserProfile, logPassiveSignal } from './userPreferences';
 import Sidebar from './Sidebar';
 import './Home.css';
 
@@ -13,6 +14,14 @@ function Home() {
   const recognitionRef = useRef(null);
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
+
+  // Redirect to onboarding if no profile or not completed
+  useEffect(() => {
+    const profile = getUserProfile();
+    if (!profile || !profile.onboardingComplete) {
+      navigate('/onboarding');
+    }
+  }, [navigate]);
 
   const toggleDictation = () => {
     if (isListening) {
@@ -47,6 +56,7 @@ function Home() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      logPassiveSignal('search', { query: searchQuery.trim() });
       localStorage.setItem('pendingRecipeRequest', searchQuery);
       navigate('/cook');
     }

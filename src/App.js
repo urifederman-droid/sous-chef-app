@@ -14,6 +14,7 @@ import GroceryList from './GroceryList';
 import MealSchedule from './MealSchedule';
 import WantToCook from './WantToCook';
 import ContinueCooking from './ContinueCooking';
+import Onboarding from './Onboarding';
 import './App.css';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
           <Route path="/meal-schedule" element={<MealSchedule />} />
           <Route path="/want-to-cook" element={<WantToCook />} />
           <Route path="/continue-cooking" element={<ContinueCooking />} />
+          <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </div>
     </Router>

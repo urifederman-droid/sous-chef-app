@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
 import { uploadPhoto } from './firebaseStorage';
-import { getUserPreferencesPrompt } from './userPreferences';
+import { getUserPreferencesPrompt, logPassiveSignal } from './userPreferences';
 import { Menu, SquarePen, Pin, Plus, Send, Camera, Mic, X, ImageIcon } from 'lucide-react';
 import Sidebar from './Sidebar';
 import './ChatCookingMode.css';
@@ -429,6 +429,7 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
       if (wantToCookMatch) {
         try {
           const title = wantToCookMatch[1];
+          logPassiveSignal('wishlist_add', { title });
           const existing = JSON.parse(localStorage.getItem('wantToCook') || '[]');
           existing.push({
             id: Date.now().toString(),

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
-import { getUserPreferencesPrompt } from './userPreferences';
+import { getUserPreferencesPrompt, logPassiveSignal } from './userPreferences';
 import './IngredientCheck.css';
 
 function IngredientCheck() {
@@ -68,6 +68,7 @@ function IngredientCheck() {
         ...substitutions,
         [index]: suggestion
       });
+      logPassiveSignal('substitution', { missing: ingredient.item, recipe: recipe.title });
     } catch (error) {
       console.error('Error getting substitution:', error);
       alert('Failed to get substitution. Please try again.');
