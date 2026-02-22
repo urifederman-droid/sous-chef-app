@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Anthropic from '@anthropic-ai/sdk';
 import { uploadPhoto } from './firebaseStorage';
-import { getUserPreferencesPrompt, logPassiveSignal } from './userPreferences';
+import { getUserPreferencesPrompt, getDefaultServings, logPassiveSignal } from './userPreferences';
+import { extractRecipeMetadata, mergeMetadataOntoRecipe, generateRecipeId } from './recipeMetadata';
 import { Menu, SquarePen, Pin, Plus, Send, Camera, Mic, X, ImageIcon } from 'lucide-react';
 import Sidebar from './Sidebar';
 import './ChatCookingMode.css';
@@ -64,6 +65,8 @@ function ChatCookingMode() {
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
   const recognitionRef = useRef(null);
+  const recipeSourceRef = useRef(null);
+  const recipeIdRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -135,6 +138,9 @@ function ChatCookingMode() {
       localStorage.removeItem('currentRecipe');
       try {
         const recipe = JSON.parse(savedRecipe);
+        if (recipe._source) {
+          recipeSourceRef.current = recipe._source;
+        }
         const formatted = formatRecipeFromJSON(recipe);
         const aiMessage = { role: 'assistant', content: formatted, timestamp: new Date() };
         setMessages([aiMessage]);
@@ -143,6 +149,33 @@ function ChatCookingMode() {
         enrichRecipeWithTips(formatted);
       } catch (e) {
         console.error('Error parsing saved recipe:', e);
+      }
+      return;
+    }
+    const pendingCookAgain = localStorage.getItem('pendingCookAgainData');
+    if (pendingCookAgain) {
+      localStorage.removeItem('pendingCookAgainData');
+      try {
+        const data = JSON.parse(pendingCookAgain);
+        recipeIdRef.current = data.recipeId;
+        if (data._source) {
+          recipeSourceRef.current = data._source;
+        }
+        if (data.pastNotes && data.pastNotes.length > 0) {
+          // Show original recipe first, then have Claude incorporate notes
+          const aiMessage = { role: 'assistant', content: data.pinnedRecipeText, timestamp: new Date() };
+          setMessages([aiMessage]);
+          setPinnedRecipe(data.pinnedRecipeText);
+          setIsPinned(true);
+          incorporatePastNotes(data.pinnedRecipeText, data.pastNotes);
+        } else {
+          const aiMessage = { role: 'assistant', content: data.pinnedRecipeText, timestamp: new Date() };
+          setMessages([aiMessage]);
+          setPinnedRecipe(data.pinnedRecipeText);
+          setIsPinned(true);
+        }
+      } catch (e) {
+        console.error('Error restoring cook again data:', e);
       }
       return;
     }
@@ -172,7 +205,7 @@ function ChatCookingMode() {
         max_tokens: 4000,
         messages: [{ 
         role: 'user', 
-        content: 'I need a recipe for ' + request + '. Please format it with:\n\n1. Title (with emoji)\n2. Right below the title, show: Prep Time | Cook Time | Serves X (on one line, separated by |)\n3. Then ingredients and instructions\n\nAt the END, always ask:\n\n"How does that sound? Any changes to the number of people eating? Do you have all the equipment? All ingredients? I can help make any substitution."\n\nMake it friendly and conversational.' + getUserPreferencesPrompt()
+        content: 'I need a recipe for ' + request + '. Please format it with:\n\n1. Title (with emoji)\n2. Right below the title, show: Prep Time | Cook Time | Serves X (on one line, separated by |)\n3. Then ingredients and instructions\n\nDefault to ' + getDefaultServings() + ' servings unless I specify otherwise.\n\nAt the END, always ask:\n\n"How does that sound? Any changes to the number of people eating? Do you have all the equipment? All ingredients? I can help make any substitution."\n\nMake it friendly and conversational.' + getUserPreferencesPrompt()
       }]
       });
       
@@ -229,6 +262,45 @@ function ChatCookingMode() {
 
     } catch (error) {
       console.error('Error enriching recipe:', error);
+      // Silently fail — user still has the original recipe
+    }
+    setLoading(false);
+  };
+
+  const incorporatePastNotes = async (recipeText, pastNotes) => {
+    setLoading(true);
+    try {
+      const anthropic = new Anthropic({
+        apiKey: process.env.REACT_APP_ANTHROPIC_API_KEY,
+        dangerouslyAllowBrowser: true
+      });
+
+      const notesText = pastNotes.map((n, i) => `- ${n}`).join('\n');
+
+      const stream = await anthropic.messages.stream({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        messages: [{
+          role: 'user',
+          content: `You are a cooking assistant. The user is cooking this recipe again and left these notes from previous times:\n\n${notesText}\n\nRewrite the recipe incorporating any actionable feedback from their notes (e.g. adjusted times, temperatures, amounts, techniques). Then add a brief friendly message at the end (before the "How does that sound?" closing) explaining what you changed based on their notes. Format it as:\n\n*Based on your notes from last time, I [describe changes].*\n\nRules:\n- Keep the exact same structure: title, prep/cook/serves line, ingredients list, numbered instructions, closing question\n- Only change things their notes actually suggest changing\n- If the notes don't contain actionable recipe changes, output the recipe unchanged and skip the "Based on your notes" line\n- Do NOT add a preamble — start directly with the recipe\n\nRecipe:\n\n${recipeText}`
+        }]
+      });
+
+      let fullContent = '';
+
+      for await (const chunk of stream) {
+        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+          fullContent += chunk.delta.text;
+          setMessages([{ role: 'assistant', content: fullContent, timestamp: new Date(), streaming: true }]);
+        }
+      }
+
+      const updatedMessage = { role: 'assistant', content: fullContent, timestamp: new Date() };
+      setMessages([updatedMessage]);
+      setPinnedRecipe(fullContent);
+
+    } catch (error) {
+      console.error('Error incorporating past notes:', error);
       // Silently fail — user still has the original recipe
     }
     setLoading(false);
@@ -438,6 +510,9 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
             chatHistory: newMessages.map(m => ({ role: m.role, content: m.content }))
           });
           localStorage.setItem('wantToCook', JSON.stringify(existing));
+          // Remove from pausedSessions to avoid duplicating in Continue Cooking
+          const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
+          localStorage.setItem('pausedSessions', JSON.stringify(sessions.filter(s => s.id !== sessionId)));
           const confirmMsg = { role: 'assistant', content: `Saved "${title}" to your Want to Cook list!`, timestamp: new Date() };
           setMessages([...newMessages, confirmMsg]);
           setLoading(false);
@@ -466,6 +541,7 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
   };
 
   const handleStartNewChat = () => {
+    recipeIdRef.current = null;
     localStorage.setItem('pendingRecipeRequest', newRecipeRequest);
     setNewRecipeRequest(null);
     window.location.href = '/cook';
@@ -560,21 +636,99 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
         }
       }
 
-      const firstMessage = messages[0]?.content || '';
-      const firstLine = firstMessage.split('\n')[0] || 'Recipe';
-      const title = firstLine.replace(/[^a-zA-Z0-9\s-]/g, '').trim() || 'Recipe';
+      // Derive title from pinnedRecipe (the final recipe) instead of messages[0]
+      const recipeText = pinnedRecipe || messages[0]?.content || '';
+      const firstLine = recipeText.split('\n')[0] || 'Recipe';
+      const title = firstLine.replace(/[#*]/g, '').trim() || 'Recipe';
+
+      const recipeId = recipeIdRef.current || generateRecipeId();
+      recipeIdRef.current = recipeId;
+
+      const newSession = {
+        date: new Date().toISOString(),
+        chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
+        sessionPhotos: sessionPhotos,
+        rating: null,
+        tasteRating: null,
+        effortRating: null,
+        notes: '',
+        tags: []
+      };
 
       const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
-      savedRecipes.unshift({
-        title: title,
-        cookedDate: new Date().toISOString(),
-        sessionPhotos: sessionPhotos,
-        chatHistory: messages.map(m => ({ role: m.role, content: m.content }))
-      });
+      const existingIndex = savedRecipes.findIndex(r => r.recipeId === recipeId);
+
+      if (existingIndex >= 0) {
+        const existing = savedRecipes[existingIndex];
+        // Migrate old top-level data into cookSessions if not already done
+        if (!existing.cookSessions) {
+          existing.cookSessions = [{
+            date: existing.cookedDate,
+            chatHistory: existing.chatHistory,
+            sessionPhotos: existing.sessionPhotos || [],
+            rating: existing.rating || null,
+            tasteRating: existing.tasteRating || null,
+            effortRating: existing.effortRating || null,
+            notes: existing.notes || '',
+            tags: existing.tags || []
+          }];
+        }
+        // Push new session at front
+        existing.cookSessions.unshift(newSession);
+        // Update top-level fields to latest cook
+        existing.title = title;
+        existing.cookedDate = newSession.date;
+        existing.chatHistory = newSession.chatHistory;
+        existing.sessionPhotos = newSession.sessionPhotos;
+        existing.pinnedRecipeText = pinnedRecipe || existing.pinnedRecipeText;
+        // Reset top-level rating fields (will be set in CookingComplete)
+        existing.rating = null;
+        existing.tasteRating = null;
+        existing.effortRating = null;
+        existing.notes = '';
+        existing.tags = [];
+        // Move recipe to index 0
+        savedRecipes.splice(existingIndex, 1);
+        savedRecipes.unshift(existing);
+      } else {
+        savedRecipes.unshift({
+          recipeId: recipeId,
+          title: title,
+          cookedDate: new Date().toISOString(),
+          sessionPhotos: sessionPhotos,
+          chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
+          pinnedRecipeText: pinnedRecipe || null,
+          cookSessions: [newSession]
+        });
+      }
+
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
-      
+
+      // Fire-and-forget: extract recipe metadata
+      const fullRecipeText = pinnedRecipe || (messages.find(m => m.role === 'assistant')?.content || '');
+      if (fullRecipeText) {
+        extractRecipeMetadata(fullRecipeText).then(metadata => {
+          if (recipeSourceRef.current) {
+            metadata.source = { ...metadata.source, ...recipeSourceRef.current };
+          } else {
+            metadata.source.type = 'ai_generated';
+            metadata.source.aiGenerated = true;
+          }
+          mergeMetadataOntoRecipe(0, metadata);
+        }).catch(err => console.error('Metadata extraction failed:', err));
+      }
+
       const sessions = JSON.parse(localStorage.getItem('pausedSessions') || '[]');
       localStorage.setItem('pausedSessions', JSON.stringify(sessions.filter(s => s.id !== sessionId)));
+
+      // Remove wishlist item if cooking was started from Wishlist
+      const wishlistItemId = localStorage.getItem('wishlistItemCooking');
+      if (wishlistItemId) {
+        localStorage.removeItem('wishlistItemCooking');
+        const wishlist = JSON.parse(localStorage.getItem('wantToCook') || '[]');
+        localStorage.setItem('wantToCook', JSON.stringify(wishlist.filter(w => w.id !== wishlistItemId)));
+      }
+
       console.log('Saved recipe:', title);
       navigate('/complete');
     } catch (error) {

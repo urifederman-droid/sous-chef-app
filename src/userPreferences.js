@@ -48,6 +48,14 @@ export function getUserProfile() {
   return null;
 }
 
+export function getDefaultServings() {
+  const profile = getUserProfile();
+  const raw = profile?.identity?.householdSize?.value;
+  if (!raw) return 4;
+  const num = typeof raw === 'number' ? raw : parseInt(String(raw).match(/\d+/)?.[0], 10);
+  return num && num >= 1 && num <= 20 ? num : 4;
+}
+
 export function saveUserProfile(profile) {
   localStorage.setItem('userProfile', JSON.stringify(profile));
 }
