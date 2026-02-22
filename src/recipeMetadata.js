@@ -207,10 +207,13 @@ ${recipeText.slice(0, 3000)}`
   return metadata;
 }
 
-export function mergeMetadataOntoRecipe(recipeIndex, metadata) {
+export function mergeMetadataOntoRecipe(recipeIdOrIndex, metadata) {
   const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
-  if (recipeIndex >= 0 && recipeIndex < savedRecipes.length) {
-    savedRecipes[recipeIndex].metadata = metadata;
+  let idx = typeof recipeIdOrIndex === 'string'
+    ? savedRecipes.findIndex(r => r.recipeId === recipeIdOrIndex)
+    : recipeIdOrIndex;
+  if (idx >= 0 && idx < savedRecipes.length) {
+    savedRecipes[idx].metadata = metadata;
     localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
   }
 }
@@ -248,23 +251,26 @@ export async function backfillMetadata(onUpdate) {
   const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
   const needsBackfill = savedRecipes
     .map((r, i) => ({ recipe: r, index: i }))
-    .filter(({ recipe }) => !recipe.metadata);
+    .filter(({ recipe }) => !recipe.metadata || !recipe.metadata.discovery?.cuisine);
 
   if (needsBackfill.length === 0) return;
 
   for (const { recipe, index } of needsBackfill) {
     try {
-      const recipeText = recipe.chatHistory
-        ?.filter(m => m.role === 'assistant')
-        .map(m => typeof m.content === 'string' ? m.content : '')
-        .join('\n') || recipe.title || '';
+      const recipeText = recipe.pinnedRecipeText
+        || recipe.chatHistory
+          ?.filter(m => m.role === 'assistant')
+          .map(m => typeof m.content === 'string' ? m.content : '')
+          .join('\n')
+        || recipe.title || '';
 
       if (!recipeText.trim()) continue;
 
       const metadata = await extractRecipeMetadata(recipeText);
-      metadata.source.type = 'ai_generated';
+      metadata.source.type = recipe.metadata?.source?.type || 'ai_generated';
       metadata.source.aiGenerated = true;
-      mergeMetadataOntoRecipe(index, metadata);
+      const id = recipe.recipeId || index;
+      mergeMetadataOntoRecipe(id, metadata);
       if (onUpdate) onUpdate();
     } catch (err) {
       console.error(`Backfill failed for recipe ${index}:`, err);

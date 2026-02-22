@@ -716,7 +716,7 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
             metadata.source.type = 'ai_generated';
             metadata.source.aiGenerated = true;
           }
-          mergeMetadataOntoRecipe(0, metadata);
+          mergeMetadataOntoRecipe(recipeId, metadata);
         }).catch(err => console.error('Metadata extraction failed:', err));
       }
 

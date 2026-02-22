@@ -41,7 +41,7 @@ function MyRecipes() {
     setRecipes(savedRecipes);
 
     // Backfill metadata for old recipes that don't have it
-    const hasRecipesWithoutMetadata = savedRecipes.some(r => !r.metadata);
+    const hasRecipesWithoutMetadata = savedRecipes.some(r => !r.metadata || !r.metadata.discovery?.cuisine);
     if (hasRecipesWithoutMetadata) {
       backfillMetadata(() => {
         const updated = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
@@ -244,11 +244,10 @@ function MyRecipes() {
       setRecipes(savedRecipes);
 
       // Fire-and-forget metadata extraction
-      const newIndex = 0;
       extractRecipeMetadata(pinnedRecipeText).then(metadata => {
         metadata.source.type = 'imported';
         metadata.source.aiGenerated = false;
-        mergeMetadataOntoRecipe(newIndex, metadata);
+        mergeMetadataOntoRecipe(recipeId, metadata);
         const updated = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
         setRecipes(updated);
       }).catch(() => {});
