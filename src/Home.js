@@ -84,7 +84,7 @@ function Home() {
       <form onSubmit={handleSearch} className="search-section">
         <div className="search-bar">
           <textarea
-            placeholder="AI Generate or Import Recipe"
+            placeholder="What would you like to cook?"
             value={searchQuery}
             rows={1}
             onChange={(e) => {

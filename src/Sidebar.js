@@ -5,7 +5,7 @@ import './Sidebar.css';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Home', icon: Home },
-  { path: '/want-to-cook', label: 'Want to Cook', icon: ChefHat },
+  { path: '/want-to-cook', label: 'Wishlist', icon: ChefHat },
   { path: '/continue-cooking', label: 'Continue Cooking', icon: Clock },
   { path: '/my-recipes', label: 'My Cookbook', icon: BookOpen },
   { path: '/grocery-list', label: 'Grocery List', icon: ShoppingCart },

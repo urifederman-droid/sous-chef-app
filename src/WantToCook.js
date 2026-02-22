@@ -56,7 +56,7 @@ function WantToCook() {
           <button className="header-menu-btn" onClick={() => setSidebarOpen(true)}>
             <Menu size={20} />
           </button>
-          <h1>Want to Cook</h1>
+          <h1>Wishlist</h1>
         </div>
         <div className="header-right-actions">
           {wantToCook.length > 0 && (
