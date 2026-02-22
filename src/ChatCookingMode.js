@@ -609,9 +609,11 @@ Use the recipe name from the current conversation as the title.` + getUserPrefer
         const aiMessage = { role: 'assistant', content: fullContent, timestamp: new Date() };
         setMessages([...newMessages, aiMessage]);
 
-        const hasIngredients = /ingredient/i.test(fullContent);
-        const hasInstructions = /instruction|step\s*\d|directions/i.test(fullContent);
-        if (hasIngredients && hasInstructions) {
+        // Only pin as recipe if it looks like a full structured recipe
+        // (has ingredient list items AND numbered steps), not just a mention of the words
+        const hasIngredientList = /^[-•*]\s+.+/m.test(fullContent) && /ingredient/i.test(fullContent);
+        const hasNumberedSteps = /^\d+[\.\)]\s+.+/m.test(fullContent);
+        if (hasIngredientList && hasNumberedSteps) {
           setPinnedRecipe(fullContent);
         }
       } catch (error) {
