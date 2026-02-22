@@ -163,3 +163,24 @@
 .inline-start-cooking-btn:hover {
   opacity: 0.9;
 }
+
+.inline-new-recipe-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+}
+
+.inline-new-recipe-btn:hover {
+  background: var(--accent);
+}

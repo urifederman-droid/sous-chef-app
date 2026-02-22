@@ -109,6 +109,7 @@ function InlineAgentChat({ systemPrompt, placeholder }) {
   const visibleMessages = messages.slice(-6);
   const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant' && !m.streaming);
   const showStartCooking = isExpanded && lastAssistant && looksLikeRecipe(lastAssistant.content);
+  const showNewRecipe = isExpanded && lastAssistant && !showStartCooking && /none|no match|doesn't match|don't have|not on your|isn't in your/i.test(lastAssistant.content);
 
   return (
     <div className="inline-agent-chat">
@@ -136,6 +137,13 @@ function InlineAgentChat({ systemPrompt, placeholder }) {
           <button className="inline-start-cooking-btn" onClick={() => handleStartCooking(lastAssistant.content)}>
             <ChefHat size={16} />
             Start Cooking
+          </button>
+        </div>
+      )}
+      {showNewRecipe && (
+        <div className="inline-start-cooking-bar">
+          <button className="inline-new-recipe-btn" onClick={() => navigate('/')}>
+            Start a New Recipe
           </button>
         </div>
       )}
