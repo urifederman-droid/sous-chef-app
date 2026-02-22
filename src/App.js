@@ -10,6 +10,7 @@ import CookingComplete from './CookingComplete';
 import CookFreestyle from './CookFreestyle';
 import MyRecipes from './MyRecipes';
 import AccountSettings from './AccountSettings';
+import SettingsPage from './Settings';
 import GroceryList from './GroceryList';
 import MealSchedule from './MealSchedule';
 import WantToCook from './WantToCook';
@@ -32,6 +33,7 @@ function App() {
           <Route path="/complete" element={<CookingComplete />} />
           <Route path="/my-recipes" element={<MyRecipes />} />
           <Route path="/account-settings" element={<AccountSettings />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/grocery-list" element={<GroceryList />} />
           <Route path="/meal-schedule" element={<MealSchedule />} />
           <Route path="/want-to-cook" element={<WantToCook />} />

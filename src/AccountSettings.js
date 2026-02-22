@@ -5,8 +5,10 @@ import { getUserProfile, saveUserProfile, createDefaultProfile } from './userPre
 import './AccountSettings.css';
 
 function AccountSettings() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [allergies, setAllergies] = useState('');
-  const [cuisines, setCuisines] = useState('');
+  const [dietaryPreferences, setDietaryPreferences] = useState('');
   const [dislikes, setDislikes] = useState('');
   const [saved, setSaved] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,8 +19,10 @@ function AccountSettings() {
     const p = getUserProfile();
     if (p) {
       setProfile(p);
+      setName(p.account?.name || '');
+      setEmail(p.account?.email || '');
       setAllergies(p.manual?.allergies || '');
-      setCuisines(p.manual?.cuisines || '');
+      setDietaryPreferences(p.manual?.dietaryPreferences || '');
       setDislikes(p.manual?.dislikes || '');
     } else {
       try {
@@ -26,7 +30,6 @@ function AccountSettings() {
         if (stored) {
           const prefs = JSON.parse(stored);
           setAllergies(prefs.allergies || '');
-          setCuisines(prefs.cuisines || '');
           setDislikes(prefs.dislikes || '');
         }
       } catch {}
@@ -35,10 +38,11 @@ function AccountSettings() {
 
   const handleSave = () => {
     // Save to both legacy and new profile
-    localStorage.setItem('userPreferences', JSON.stringify({ allergies, cuisines, dislikes }));
+    localStorage.setItem('userPreferences', JSON.stringify({ allergies, dislikes }));
 
     const p = getUserProfile() || createDefaultProfile();
-    p.manual = { allergies, cuisines, dislikes };
+    p.account = { name, email };
+    p.manual = { ...p.manual, allergies, dietaryPreferences, dislikes };
     saveUserProfile(p);
     setProfile(p);
 
@@ -117,7 +121,33 @@ function AccountSettings() {
 
       <main className="profile-content">
         <section className="profile-section">
-          <h2>User Preferences</h2>
+          <h2>Account</h2>
+
+          <div className="pref-card">
+            <h3>Name</h3>
+            <input
+              type="text"
+              className="pref-input"
+              placeholder="Your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <div className="pref-card">
+            <h3>Email</h3>
+            <input
+              type="email"
+              className="pref-input"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+        </section>
+
+        <section className="profile-section">
+          <h2>Dietary</h2>
 
           <div className="pref-card">
             <h3>Allergies & Dietary Restrictions</h3>
@@ -131,13 +161,13 @@ function AccountSettings() {
           </div>
 
           <div className="pref-card">
-            <h3>Favorite Cuisines</h3>
+            <h3>Dietary Preferences</h3>
             <input
               type="text"
               className="pref-input"
-              placeholder="e.g. Mexican, Italian, Japanese"
-              value={cuisines}
-              onChange={(e) => setCuisines(e.target.value)}
+              placeholder="e.g. high protein, keto, low-carb"
+              value={dietaryPreferences}
+              onChange={(e) => setDietaryPreferences(e.target.value)}
             />
           </div>
 

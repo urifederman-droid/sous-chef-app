@@ -7,7 +7,8 @@ function createDefaultProfile() {
     version: 1,
     onboardingComplete: false,
     sessionsCompleted: 0,
-    manual: { allergies: '', cuisines: '', dislikes: '' },
+    account: { email: '', name: '' },
+    manual: { allergies: '', cuisines: '', dislikes: '', dietaryPreferences: '' },
     identity: {},
     equipment: { owned: [], confidence: 0 },
     dietary: {
@@ -304,7 +305,15 @@ export function getUserPreferencesPrompt() {
       parts.push(`- Ingredients I dislike: ${prefs.dislikes.trim()}`);
     }
     if (parts.length === 0) return '';
-    return `\n\nUser preferences:\n${parts.join('\n')}\n\nIMPORTANT: These preferences are ONLY for when the user gives a vague or open-ended request (e.g. "give me a taco recipe"). When the user explicitly names a specific ingredient or dish (e.g. "beef tacos"), you MUST give them exactly what they asked for — never substitute or modify based on preferences. After providing the full recipe they asked for, you may add a brief note like "I noticed you don't usually like [X] — would you like me to swap it for something else?"`;
+    let preferenceRules;
+    if (prefs.allergies && prefs.allergies.trim()) {
+      preferenceRules = `\n\nPREFERENCE vs ALLERGY RULES:
+- TASTE preferences (cuisines, dislikes) are ONLY applied to vague/open-ended requests. When the user names a specific dish, give them exactly what they asked for.
+- ALLERGIES are ALWAYS enforced, even for specific requests. When a recipe contains one of their allergens (${prefs.allergies.trim()}), ALWAYS substitute it with a safe alternative and annotate the swap inline in the ingredient list like this: "almond flour *(replaces wheat flour)*". Do NOT ask before making allergy swaps — just do it and annotate. If the user explicitly says "use the original ingredients", comply.`;
+    } else {
+      preferenceRules = `\n\nIMPORTANT: These preferences are ONLY for when the user gives a vague or open-ended request (e.g. "give me a taco recipe"). When the user explicitly names a specific ingredient or dish (e.g. "beef tacos"), you MUST give them exactly what they asked for — never substitute or modify based on preferences. After providing the full recipe they asked for, you may add a brief note like "I noticed you don't usually like [X] — would you like me to swap it for something else?"`;
+    }
+    return `\n\nUser preferences:\n${parts.join('\n')}${preferenceRules}`;
   } catch {
     return '';
   }
@@ -340,15 +349,18 @@ function buildProfilePrompt(profile) {
     parts.push(`- Dislikes: ${dislikes.join(', ')}`);
   }
 
-  // Favorite cuisines
-  const cuisines = [
-    ...(profile.manual?.cuisines ? [profile.manual.cuisines.trim()] : []),
-    ...(profile.tastes?.cuisineAffinities || [])
-      .filter(c => c.score >= 0.6 && c.confidence >= 0.3)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map(c => c.cuisine)
-  ].filter(Boolean);
+  // Dietary preferences (manual, e.g. "high protein", "keto")
+  const dietaryPrefs = profile.manual?.dietaryPreferences?.trim();
+  if (dietaryPrefs) {
+    parts.push(`- Dietary preferences: ${dietaryPrefs}`);
+  }
+
+  // Favorite cuisines (learned only, no manual input)
+  const cuisines = (profile.tastes?.cuisineAffinities || [])
+    .filter(c => c.score >= 0.6 && c.confidence >= 0.3)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map(c => c.cuisine);
   if (cuisines.length > 0) {
     parts.push(`- Favorite cuisines: ${cuisines.join(', ')}`);
   }
@@ -408,7 +420,18 @@ function buildProfilePrompt(profile) {
 
   if (parts.length === 0) return '';
 
-  return `\n\nUser profile:\n${parts.join('\n')}\n\nIMPORTANT: These preferences are ONLY for when the user gives a vague or open-ended request (e.g. "give me a taco recipe"). When the user explicitly names a specific ingredient or dish (e.g. "beef tacos"), you MUST give them exactly what they asked for — never substitute or modify based on preferences. After providing the full recipe they asked for, you may add a brief note like "I noticed you don't usually like [X] — would you like me to swap it for something else?"`;
+  const hasAllergies = allergies.length > 0;
+
+  let preferenceRules;
+  if (hasAllergies) {
+    preferenceRules = `\n\nPREFERENCE vs ALLERGY RULES:
+- TASTE preferences (cuisines, dislikes, flavors) are ONLY applied to vague/open-ended requests. When the user names a specific dish (e.g. "beef tacos"), give them exactly what they asked for — never substitute based on taste preferences. You may add a brief note offering to swap.
+- ALLERGIES are ALWAYS enforced, even for specific requests. When a recipe contains one of their allergens (${allergies.join(', ')}), ALWAYS substitute it with a safe alternative and annotate the swap inline in the ingredient list like this: "almond flour *(replaces wheat flour)*". This way the recipe is safe to follow as-is, but the user can see exactly what was changed. Do NOT ask before making allergy swaps — just do it and annotate. If the user explicitly says "use the original ingredients", comply.`;
+  } else {
+    preferenceRules = `\n\nIMPORTANT: These preferences are ONLY for when the user gives a vague or open-ended request (e.g. "give me a taco recipe"). When the user explicitly names a specific ingredient or dish (e.g. "beef tacos"), you MUST give them exactly what they asked for — never substitute or modify based on preferences. After providing the full recipe they asked for, you may add a brief note like "I noticed you don't usually like [X] — would you like me to swap it for something else?"`;
+  }
+
+  return `\n\nUser profile:\n${parts.join('\n')}${preferenceRules}`;
 }
 
 export { createDefaultProfile };

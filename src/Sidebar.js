@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, SquarePen, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Home } from 'lucide-react';
+import { X, SquarePen, ChefHat, Clock, BookOpen, ShoppingCart, CalendarDays, User, Home, Settings } from 'lucide-react';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
@@ -92,6 +92,12 @@ function Sidebar({ isOpen, onClose, currentPath }) {
             <button className="sidebar-nav-item" onClick={() => handleNav('/account-settings')}>
               <User size={18} />
               <span>Profile</span>
+            </button>
+          )}
+          {currentPath !== '/settings' && (
+            <button className="sidebar-nav-item" onClick={() => handleNav('/settings')}>
+              <Settings size={18} />
+              <span>Settings</span>
             </button>
           )}
         </div>
