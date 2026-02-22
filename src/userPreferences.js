@@ -433,24 +433,41 @@ function buildProfilePrompt(profile) {
     if (withMeta.length > 0) {
       const cookbookParts = [];
 
-      // Top cuisines cooked
-      const cuisineCounts = {};
+      // Cuisines with average ratings
+      const cuisineStats = {};
       withMeta.forEach(r => {
         const c = r.metadata.discovery.cuisine;
-        if (c) cuisineCounts[c] = (cuisineCounts[c] || 0) + 1;
+        if (!c) return;
+        if (!cuisineStats[c]) cuisineStats[c] = { count: 0, totalRating: 0, ratedCount: 0 };
+        cuisineStats[c].count++;
+        if (r.rating > 0) {
+          cuisineStats[c].totalRating += r.rating;
+          cuisineStats[c].ratedCount++;
+        }
       });
-      const topCuisines = Object.entries(cuisineCounts)
-        .sort((a, b) => b[1] - a[1])
+      const topCuisines = Object.entries(cuisineStats)
+        .sort((a, b) => b[1].count - a[1].count)
         .slice(0, 5)
-        .map(([c, n]) => `${c} (${n}x)`);
+        .map(([c, s]) => {
+          let label = `${c} (${s.count}x`;
+          if (s.ratedCount > 0) label += `, avg ${(s.totalRating / s.ratedCount).toFixed(1)} stars`;
+          return label + ')';
+        });
       if (topCuisines.length > 0) {
-        cookbookParts.push(`cuisines cooked: ${topCuisines.join(', ')}`);
+        cookbookParts.push(`cuisines: ${topCuisines.join(', ')}`);
       }
 
-      // Highly rated recipes
-      const rated = savedRecipes.filter(r => r.rating >= 4);
+      // Highly rated recipes with metadata context
+      const rated = savedRecipes.filter(r => r.rating >= 4 && r.metadata?.discovery?.cuisine);
       if (rated.length > 0) {
-        cookbookParts.push(`top-rated: ${rated.slice(0, 5).map(r => r.title).join(', ')}`);
+        cookbookParts.push(`loved: ${rated.slice(0, 5).map(r => `${r.title} (${r.rating} stars)`).join(', ')}`);
+      }
+
+      // Low-rated patterns to avoid
+      const lowRated = savedRecipes.filter(r => r.rating > 0 && r.rating <= 2 && r.metadata?.discovery?.cuisine);
+      if (lowRated.length > 0) {
+        const lowCuisines = [...new Set(lowRated.map(r => r.metadata.discovery.cuisine))];
+        cookbookParts.push(`didn't enjoy: ${lowRated.slice(0, 3).map(r => `${r.title} (${r.rating} stars)`).join(', ')}`);
       }
 
       // Average difficulty preference
