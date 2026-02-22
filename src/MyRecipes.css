@@ -657,3 +657,18 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.import-recipe-text-btn {
+  margin-top: 8px;
+  border: none;
+  background: none;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.import-recipe-text-btn:hover {
+  color: var(--foreground);
+}

@@ -494,6 +494,9 @@ function MyRecipes() {
             <button className="start-cooking-btn" onClick={() => navigate('/')}>
               Start Cooking
             </button>
+            <button className="import-recipe-text-btn" onClick={() => setShowImportModal(true)}>
+              Or import an existing recipe
+            </button>
           </div>
         ) : (
           <div className="card-list">
