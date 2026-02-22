@@ -291,7 +291,8 @@ function MyRecipes() {
             </button>
           )}
           <button className="import-btn" onClick={() => setShowImportModal(true)}>
-            <Upload size={20} />
+            <Upload size={16} />
+            <span>Import</span>
           </button>
         </div>
       </header>
