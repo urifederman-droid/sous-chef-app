@@ -426,6 +426,58 @@ function buildProfilePrompt(profile) {
     parts.push(`- Equipment: ${profile.equipment.owned.slice(0, 8).join(', ')}`);
   }
 
+  // Cookbook history insights from recipe metadata
+  try {
+    const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+    const withMeta = savedRecipes.filter(r => r.metadata?.discovery?.cuisine);
+    if (withMeta.length > 0) {
+      const cookbookParts = [];
+
+      // Top cuisines cooked
+      const cuisineCounts = {};
+      withMeta.forEach(r => {
+        const c = r.metadata.discovery.cuisine;
+        if (c) cuisineCounts[c] = (cuisineCounts[c] || 0) + 1;
+      });
+      const topCuisines = Object.entries(cuisineCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([c, n]) => `${c} (${n}x)`);
+      if (topCuisines.length > 0) {
+        cookbookParts.push(`cuisines cooked: ${topCuisines.join(', ')}`);
+      }
+
+      // Highly rated recipes
+      const rated = savedRecipes.filter(r => r.rating >= 4);
+      if (rated.length > 0) {
+        cookbookParts.push(`top-rated: ${rated.slice(0, 5).map(r => r.title).join(', ')}`);
+      }
+
+      // Average difficulty preference
+      const difficulties = withMeta
+        .map(r => r.metadata.execution?.difficulty?.level)
+        .filter(Boolean);
+      if (difficulties.length >= 3) {
+        const avg = difficulties.reduce((a, b) => a + b, 0) / difficulties.length;
+        const label = avg <= 1.5 ? 'easy' : avg <= 2.3 ? 'medium' : 'challenging';
+        cookbookParts.push(`typically cooks ${label} recipes`);
+      }
+
+      // Average cook time from metadata
+      const times = withMeta
+        .map(r => r.metadata.execution?.time?.totalMinutes)
+        .filter(Boolean);
+      if (times.length >= 3) {
+        const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+        cookbookParts.push(`avg cook time: ~${avg} min`);
+      }
+
+      if (cookbookParts.length > 0) {
+        parts.push(`- Cooking history (${withMeta.length} recipes): ${cookbookParts.join('; ')}`);
+      }
+    }
+  } catch {}
+
   if (parts.length === 0) return '';
 
   const hasAllergies = allergies.length > 0;
