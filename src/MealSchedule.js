@@ -165,8 +165,8 @@ function MealSchedule() {
       </header>
 
       <InlineAgentChat
-        systemPrompt={`You are a friendly cooking assistant helping the user manage their meal schedule. Be concise — 2-3 sentences max unless they ask for detail. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n\nTheir meal schedule: ${JSON.stringify(Object.fromEntries(Object.entries(schedule).slice(0, 30).map(([date, meals]) => [date, meals.map(m => m.title)]))) || '{}'}.`}
-        placeholder="What's for dinner this week?"
+        systemPrompt={`You are a friendly cooking assistant helping the user manage their meal schedule. Be concise — 2-3 sentences max unless they ask for detail. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n\nIMPORTANT: ONLY refer to meals already on their schedule. Never suggest new recipes — only help them find, compare, or reorganize what's already scheduled.\n\nTheir meal schedule: ${JSON.stringify(Object.fromEntries(Object.entries(schedule).slice(0, 30).map(([date, meals]) => [date, meals.map(m => m.title)]))) || '{}'}.`}
+        placeholder="Ask anything about your schedule..."
       />
 
       {/* Add Meal Modal */}

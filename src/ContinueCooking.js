@@ -56,7 +56,7 @@ function ContinueCooking() {
       </header>
 
       <InlineAgentChat
-        systemPrompt={`You are a friendly cooking assistant helping the user find and resume their in-progress cooking sessions. Be concise — 2-3 sentences max unless they ask for detail.\n\nTheir active sessions: ${sessions.slice(0, 30).map(s => `${s.title} (last active: ${s.updatedAt ? new Date(s.updatedAt).toLocaleDateString() : 'unknown'})`).join('; ') || 'No sessions yet'}.`}
+        systemPrompt={`You are a friendly cooking assistant helping the user find and resume their in-progress cooking sessions. Be concise — 2-3 sentences max unless they ask for detail.\n\nIMPORTANT: ONLY refer to the sessions listed below. Never suggest new recipes — only help them find and resume existing sessions.\n\nTheir active sessions: ${sessions.slice(0, 30).map(s => `${s.title} (last active: ${s.updatedAt ? new Date(s.updatedAt).toLocaleDateString() : 'unknown'})`).join('; ') || 'No sessions yet'}.`}
         placeholder="Which recipe was I working on?"
       />
 
@@ -67,7 +67,7 @@ function ContinueCooking() {
               <ChefHat size={40} />
             </div>
             <h3>No recipes in progress</h3>
-            <p>Start cooking a recipe to see it here</p>
+            <p>When you start cooking, you can pause and pick up right where you left off</p>
           </div>
         ) : (
           <div className="card-list">

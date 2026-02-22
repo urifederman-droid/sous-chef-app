@@ -58,7 +58,18 @@ function WantToCook() {
   };
 
   const cookRecipe = (item) => {
-    if (item.chatHistory) {
+    localStorage.setItem('wishlistItemCooking', item.id);
+    if (item.recipeId && item.pinnedRecipeText) {
+      const pastNotes = [];
+      if (item.notes) pastNotes.push(item.notes);
+      localStorage.setItem('pendingCookAgainData', JSON.stringify({
+        recipeId: item.recipeId,
+        pinnedRecipeText: item.pinnedRecipeText,
+        title: item.title,
+        _source: item._source || null,
+        pastNotes: pastNotes.length > 0 ? pastNotes : null
+      }));
+    } else if (item.chatHistory) {
       localStorage.setItem('pendingChatHistory', JSON.stringify(item.chatHistory));
     } else {
       localStorage.setItem('pendingRecipeRequest', item.title);
@@ -111,7 +122,7 @@ function WantToCook() {
       </header>
 
       <InlineAgentChat
-        systemPrompt={`You are a friendly cooking assistant helping the user decide what to cook from their wishlist. Be concise — 2-3 sentences max unless they ask for detail. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n\nTheir wishlist items: ${wantToCook.slice(0, 30).map(i => i.title).join(', ') || 'No items yet'}.`}
+        systemPrompt={`You are a friendly cooking assistant helping the user decide what to cook from their wishlist. Be concise — 2-3 sentences max unless they ask for detail. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.\n\nIMPORTANT: ONLY recommend from the items listed below. Never invent or suggest recipes that aren't on their wishlist. If none match what they're looking for, say so and suggest they add something new.\n\nTheir wishlist items: ${wantToCook.slice(0, 30).map(i => i.title).join(', ') || 'No items yet'}.`}
         placeholder="What can I help you find?"
       />
 
@@ -149,8 +160,8 @@ function WantToCook() {
         {wantToCook.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">📋</div>
-            <h3>No items yet</h3>
-            <p>Add dishes you want to cook to your wishlist</p>
+            <h3>Your wishlist is empty</h3>
+            <p>Save dishes you want to try — tap + or ask your Sous Chef to suggest ideas</p>
           </div>
         ) : (
           <div className="card-list">
@@ -164,7 +175,7 @@ function WantToCook() {
                 <h3 className="card-title">{item.title}</h3>
                 <div className="card-actions">
                   <button className="cook-btn-inline" onClick={() => cookRecipe(item)}>
-                    {item.chatHistory ? 'Continue' : 'Cook'}
+                    {item.recipeId && item.pinnedRecipeText ? 'Cook Again' : item.chatHistory ? 'Continue' : 'Create Recipe'}
                   </button>
                   <div className="overflow-menu-wrapper" ref={openMenuId === item.id ? menuRef : null}>
                     <button className="overflow-btn" onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}>

@@ -297,7 +297,7 @@ function MyRecipes() {
       </header>
 
       <InlineAgentChat
-        systemPrompt={`You are a friendly cooking assistant helping the user search and compare recipes in their cookbook. Be concise — 2-3 sentences max unless they ask for detail.\n\nTheir saved recipes: ${recipes.slice(0, 30).map(r => {
+        systemPrompt={`You are a friendly cooking assistant helping the user search and compare recipes in their cookbook. Be concise — 2-3 sentences max unless they ask for detail.\n\nIMPORTANT: ONLY recommend from the recipes listed below. Never invent or suggest recipes that aren't in their cookbook. If none match what they're looking for, say so.\n\nTheir saved recipes: ${recipes.slice(0, 30).map(r => {
           let info = r.title;
           if (r.rating) info += ` (${r.rating} stars)`;
           if (r.tags && r.tags.length) info += ` [${r.tags.join(', ')}]`;
