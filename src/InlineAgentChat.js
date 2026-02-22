@@ -7,11 +7,14 @@ import ReactMarkdown from 'react-markdown';
 import './InlineAgentChat.css';
 
 function looksLikeRecipe(text) {
-  const hasIngredientList = /ingredient/i.test(text) && (/^[-•*]\s+.+/m.test(text) || /^\s*[-•*]\s+\d/m.test(text));
-  const hasSteps = /^\d+[.)]\s+.+/m.test(text) || /instruction/i.test(text) || /step\s*\d/i.test(text) || /direction/i.test(text);
-  // Also detect by sheer recipe structure: bullet list + cooking verbs
-  const hasCookingContent = /\b(cook|bake|saut[ée]|simmer|boil|roast|fry|dice|chop|mix|stir|preheat)\b/i.test(text);
-  return (hasIngredientList && hasSteps) || (hasIngredientList && hasCookingContent);
+  // Count bullet points (-, *, •) — recipes typically have 4+ ingredients
+  const bulletCount = (text.match(/^[\s]*[-•*]\s+.+/gm) || []).length;
+  const hasIngredientWord = /ingredient/i.test(text);
+  // Any of these step formats: "1. ", "1) ", "Step 1", "Instructions"
+  const hasSteps = /^\s*\d+[.)]\s+/m.test(text) || /instruction/i.test(text) || /\bstep\s+\d/i.test(text) || /direction/i.test(text);
+  const hasCookingVerb = /\b(cook|bake|saut[ée]|simmer|boil|roast|fry|dice|chop|stir|preheat|whisk|fold|knead|marinate)\b/i.test(text);
+
+  return (hasIngredientWord && bulletCount >= 3) || (bulletCount >= 4 && hasSteps) || (hasIngredientWord && hasSteps && hasCookingVerb);
 }
 
 function extractRecipeTitle(text) {
